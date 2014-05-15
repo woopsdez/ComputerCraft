@@ -1,0 +1,83 @@
+-- 掘り進めたい長さを入力 --
+local args = { ... }
+x = args[1]
+
+torch = 0 -- 松明カウント用変数 --
+fuel = 0 -- 燃料表示用変数 --
+
+-- 現在の燃料を表示 --
+fuel = turtle.getFuelLevel()
+print ("------------\n"..fuel.."dayo!\n------------")
+
+-- 入力された値に対して燃料が足りているか調べる --
+if tonumber(fuel) <= tonumber(x)*3 then -- *3は帰りの分の燃料 --
+	r,e = turtle.refuel()
+	print (e)
+end
+
+-- 松明を置く機能 --
+function placeTorch(...)
+	turtle.turnLeft()
+	turtle.turnLeft()
+	turtle.select(16)
+	r,e = turtle.place()
+	print (e)
+	turtle.turnLeft()
+	turtle.turnLeft()
+end 
+
+-- 周りを掘る機能 --
+function digAround(...)
+	turtle.turnLeft()
+	turtle.dig()
+	turtle.turnLeft()
+	turtle.turnLeft()
+	turtle.dig()
+	turtle.turnLeft()
+	turtle.dig()
+end
+
+-- 掘り進める機能 --
+function diggingForward(...)
+	for i = 1, x do
+		digAround()
+		turtle.digUp()
+		turtle.up()
+		digAround()
+		turtle.down()
+		turtle.forward()
+		-- 入力された値を元に一歩進むごとにカウントする--
+		torch = torch + 1 
+		print (torch)
+		if 6 == torch then -- カウントが6になったら置く --
+			print "put touch"
+			placeTorch()
+			torch = 0 -- 置いたら0からカウント --
+		end
+	end
+end
+
+-- 帰ってくる機能 --
+function getHome(...)
+	turtle.up()
+	for i = 1, x do
+		turtle.back()
+	end
+end
+
+-- 終わったらアイテムをチェストに格納する機能 --
+function inChest(...)
+	turtle.digDown()
+	turtle.select(15)
+	turtle.placeDown()
+	for i = 1, 16 do
+		turtle.select(i)
+		r,e = turtle.dropDown()
+		print (e)
+	end
+end
+
+-- 呼び出し部分 --
+diggingForward()
+getHome()
+inChest()
