@@ -1,0 +1,14 @@
+function switch(...)
+	for i = 1, 2 do
+		redstone.setOutput("bottom", true)
+		sleep(1)
+		redstone.setOutput("bottom", false)
+		sleep(1)
+	end
+end
+
+while true do
+	switch()
+	print "success"
+	sleep(180)
+end
