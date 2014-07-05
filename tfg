@@ -1,0 +1,75 @@
+--[[ ///////// ログ表示関連 ///////// ]]--
+
+-- プログラム起動時にAPIが呼び出されていたら
+h = fs.open("/log", "a") -- ログファイルに出力する
+h.write("---- start ---- \n")
+h.close()
+
+-- ログ出力機能
+function write_msg(msg)
+	h = fs.open("/log", "a")
+	h.write(tostring(msg).."\n")
+	h.close()
+end
+
+function erorrLog(r,e)
+	if not r then
+		h = fs.open("/log", "a")
+		write_msg(e)
+		h.close()
+	end
+end
+
+--[[ ///////// アイテム移動 ///////// ]]--
+
+-- アイテムを特定スロットに補充する機能
+function itemCollect(slot)
+	if 10 >= turtle.getItemCount(slot) then
+		turtle.select(slot)
+		for i = 1, 16 do
+			turtle.select(i)
+			turtle.transferTo(slot)
+		end
+		turtle.select(slot)
+	end
+end
+
+-- アイテムドロップする機能 範囲をjで指定
+function itemDrop(j)
+	for i = 1, j do
+		turtle.select(i)
+		turtle.drop()
+	end
+end
+
+--[[ ///////// 燃料関連 ///////// ]]--
+
+-- 現在の燃料を表示
+function fuelPrint()
+	print ("------------\n"..turtle.getFuelLevel().."dayo!\n------------")
+end
+
+-- 渡した引数より少なければ補給する
+-- TODO 移動距離から必要燃料を算出する関数
+function autoRefuel(slot)
+	if turtle.getFuelLevel() <= 80 then
+		turtle.select(slot)
+		local r,e = turtle.refuel(64)
+		erorrLog(r,e)
+	end
+end
+
+--[[ ///////// 松明 ///////// ]]--
+
+-- 松明を置く機能
+function placeTorch(slot)
+	if touch == 6 then
+		turtle.turnLeft()
+		turtle.turnLeft()
+		turtle.select(slot)
+		r,e = turtle.place()
+		erorrLog(r,e)
+		turtle.turnLeft()
+		turtle.turnLeft()
+	end
+end
