@@ -1,0 +1,16 @@
+args = {...}
+x = args[1]
+
+torch = 0
+
+for i = 1, x do
+	turtle.forward()
+	torch = torch + 1
+	if torch == 7 then
+		turtle.select(1)
+		turtle.placeDown()
+		turtle.select(2)
+		turtle.placeDown()
+		torch = 0
+	end
+end

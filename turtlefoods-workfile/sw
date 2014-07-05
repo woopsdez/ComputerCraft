@@ -1,0 +1,23 @@
+x = nil
+
+args = { ... }
+x = args[1]
+count = 0
+
+function switch(...)
+	redstone.setOutput("left", true)
+	sleep(3)
+	redstone.setOutput("left", false)
+	count = count + 1
+	print (count)
+end
+
+if x == nil then
+	while true do
+		switch()
+	end
+else
+	for i = 1, x do
+		switch()
+	end
+end

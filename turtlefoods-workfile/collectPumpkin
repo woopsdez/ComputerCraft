@@ -1,0 +1,33 @@
+flag = 0
+
+function goFoword()
+	for i = 1, 12 do
+		turtle.dig()
+		turtle.forward()
+	end
+end
+
+function trunTurtle()
+	turtle.turnRight()
+	turtle.turnRight()
+end
+
+function collectPumpkin()
+	for i = 1, 2 do
+		goFoword()
+		trunTurtle()
+	end
+	turtle.craft()
+	turtle.dropUp()
+end
+
+while true do
+	turtle.dig()
+	i = turtle.getItemCount(1)
+	print(i);
+	if i >= 1 then
+		collectPumpkin()
+		flag = flag + 1
+		print("cabocha "..flag.."ko tottayo!");
+	end
+end

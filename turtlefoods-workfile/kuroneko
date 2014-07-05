@@ -1,0 +1,51 @@
+local function switch(rsDir)
+	rs.setOutput(rsDir, true)
+	print "on"
+	sleep(1)
+	rs.setOutput(rsDir, false)
+	print "off"
+end
+
+local function iku()
+	turtle.turnLeft()
+	for i = 1, 7 do
+		turtle.forward()
+	end
+	switch("top")
+	for i = 1, 12 do
+		turtle.forward()
+	end
+	turtle.turnRight()
+	turtle.forward()
+	turtle.turnLeft()
+	turtle.down()
+end
+
+local function kuru(...)
+	turtle.up()
+	turtle.turnLeft()
+	turtle.forward()
+	turtle.turnLeft()
+	for i = 1, 12 do
+			turtle.forward()
+	end
+	switch("top")
+	for i = 1, 7 do
+		turtle.forward()
+	end
+	turtle.turnLeft()
+end
+
+local function exchange()
+	turtle.select(1)
+	turtle.drop(64)
+	turtle.select(16)
+	turtle.suck()
+end
+
+function jikko()
+	iku()
+	exchange()
+	switch("front")
+	kuru()
+end

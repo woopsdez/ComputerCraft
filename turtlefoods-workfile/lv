@@ -1,0 +1,150 @@
+args = { ... }
+z = args[1] -- 奥行き
+x = args[2] -- 横幅
+y = args[3] -- 高さ
+z = z-1 -- 回数の調整
+row = 0
+torch = 0
+height = 0
+down = 0
+r = 0
+
+h = fs.open("/log", "a") -- ログファイルに出力する
+h.write("---- start ---- \n")
+
+function erorrLog(...)
+	if not r then
+		h.write(e.."\n")
+		h.flush()
+	end
+end
+
+function fuelLv(...) -- 現在の燃料が80以下だったら補給する
+	f = turtle.getFuelLevel()
+	if f <= 80 then
+		r,e = turtle.refuel()
+		erorrLog()
+
+		h.write("success refuel \n")
+		h.flush()
+	end
+end
+
+function placeTorch(...) -- 松明を置く機能
+	turtle.turnLeft()
+	turtle.turnLeft()
+	turtle.select(16)
+	r,e = turtle.place()
+	erorrLog()
+	turtle.turnLeft()
+	turtle.turnLeft()
+end 
+
+function inChest(...) --　チェストに入れる機能
+	turtle.turnRight()
+	turtle.turnRight()
+	turtle.select(15)
+	r,e = turtle.place()
+	erorrLog()
+	for i = 1, 14 do
+		turtle.select(i)
+		r,e = turtle.drop()
+		erorrLog()
+	end
+	turtle.turnRight()
+	turtle.turnRight()
+end
+
+function checkBlockUp(...) -- 上にブロックがあるか
+	if turtle.detectUp() then
+		turtle.digUp()
+		turtle.up()
+		height = height + 1
+		h.write("up "..height.."\n")
+		h.flush()
+		return true
+	else
+		return false
+	end
+end
+
+function checkBlockDown(...) -- 下にブロックがあるか
+	turtle.digDown()
+	turtle.down()
+	height = height - 1
+	h.write("down "..height.."\n")
+	h.flush()
+	if 2 >= turtle.getItemSpace(14) then
+		inChest()
+	end
+end
+
+function forward(...) -- 前にすすむ
+	turtle.dig() 
+	turtle.forward()
+	h.write("前に \n")
+	h.flush()
+end
+
+function diggingUpDown(...)
+	while checkBlockUp() do --回数を指定しないで上にあればあるだけ登る
+		sleep()
+	end
+	for i = 1, height do -- 上がった回数だけ繰り返す
+		checkBlockDown()
+	end
+	height = 0
+end
+
+function right(...) -- 右へ向く
+	h.write("上へ \n")
+	diggingUpDown()
+	turtle.turnRight()
+	forward()
+	turtle.turnRight()
+	h.write("右へ \n")
+	h.flush()
+end
+
+function left(...) -- 左へ向く
+	h.write("上へ \n")
+	diggingUpDown()
+	turtle.turnLeft()
+	forward()
+	turtle.turnLeft()
+	h.write("左へ \n")
+	h.flush()
+end
+
+fuelLv()
+print ("------------\n"..f.."dayo!\n------------\n")
+
+forward()
+for i = 1, x do
+	for j = 1, z do
+		diggingUpDown()
+		forward()
+
+		torch = torch + 1
+		if 0 == row%6 then
+			if 6 == torch then
+				placeTorch()
+				torch = 0
+			end
+		end
+
+	end
+
+	if i ~= x then
+		if 1 == i%2 then
+			right() --　奇数だったら
+			row = row + 1
+			torch = 0
+		else
+			left() -- 偶数だったら
+			row = row + 1
+			torch = 0
+		end
+	end
+end
+diggingUpDown()

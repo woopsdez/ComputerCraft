@@ -1,0 +1,14 @@
+args = { ... }
+x = args[1]
+
+function une(...)
+	for i = 1, x do
+		turtle.dig()
+		turtle.forward()
+	end
+end
+
+une()
+turtle.turnRight()
+turtle.turnRight()
+une()

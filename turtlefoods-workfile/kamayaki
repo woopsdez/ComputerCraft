@@ -1,0 +1,105 @@
+r = 0
+e = 0
+f = 0
+
+function sakanaHanbun()
+	getItem =	turtle.getItemCount(1)
+	rawFish = getItem / 2
+	turtle.select(1)
+	turtle.transferTo(2, rawFish)
+	cookedFish = turtle.getItemCount(1)
+end
+
+function seiren(cookedFish)
+	-- 精錬にかかる時間を算出
+	local endTime = cookedFish * 10
+	-- 必要な木炭を調べる
+	local needChacoal = endTime / 10
+	return endTime , needChacoal
+end
+
+function kamado(et,nc) -- かまどへ往復
+	print "yaku yo!"
+	if f <= 80 then
+		turtle.refuel()
+	end
+	
+	-- 旦那さんのところからかまどへ向かう
+	turtle.turnLeft()
+	for i = 1, 5 do
+		turtle.forward()
+	end
+
+	-- 部屋に入る
+	turtle.turnLeft()
+	turtle.forward()
+	turtle.forward()
+
+	-- ホッパーへ
+	turtle.turnLeft()
+	turtle.up()
+	turtle.up()
+
+	-- かまどに素材を入れる
+	turtle.select(1)
+	turtle.drop() -- 1アイテムあたり10秒精錬にかかる
+
+	-- 側面にまわる
+	turtle.turnRight()
+	turtle.forward()
+	turtle.down()
+	turtle.turnLeft()
+	turtle.forward()
+	turtle.turnLeft()
+
+	-- かまどに燃料を入れる
+	turtle.select(16)
+	turtle.drop(nc)
+
+	-- 完成品をうけとる
+	turtle.down()
+	turtle.forward()
+	print (et)
+	sleep(et)
+	turtle.select(15)
+	turtle.suckUp()
+	turtle.select(1)
+
+	-- 元にもどる
+	turtle.turnLeft()
+	turtle.forward()
+	turtle.turnRight()
+	turtle.forward()
+	turtle.forward()
+	turtle.turnRight()
+	for i = 1, 5 do
+		turtle.forward()
+	end
+	turtle.turnLeft()
+end
+
+--- api呼出
+function loadFile(file)
+	if os.loadAPI(file) then
+		return true
+	else
+		print (file.."can't load")
+		return false
+	end	
+end
+
+loadFile("tfg") -- ライブラリ呼出
+loadFile("kuroneko") -- 通信コード呼び出し
+
+while true do
+	rednet.open("right") -- 通信を開く
+	local type = os.pullEvent() -- event typeを取得
+	if type == "rednet_message" then -- メッセージを受信したら
+		kuroneko.jikko() -- kuronekoを実行
+	elseif type == "redstone" then -- レッドストーンだったら
+		sakanaHanbun()
+		local et,nc = seiren(cookedFish)
+		kamado(et,nc)
+		print "owatta yo!"
+	end
+end

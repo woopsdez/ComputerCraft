@@ -1,0 +1,116 @@
+-- スロットの設定
+local CHEST = 12
+local FENCE = 13
+local SLAB = 14
+local FUEL = 15
+local SEED = 16
+local count = 1
+
+--- api呼出
+function loadTfg()
+	if os.loadAPI("tfg") then
+		return true
+	else
+		print "API can't load"
+		return false
+	end	
+end
+
+-- アイテムをチェストに格納
+function unloadChest(slot,j)
+	turtle.select(slot)
+	turtle.place()
+	for i = 1, j do
+		turtle.select(i)
+		turtle.drop()
+	end
+end
+
+-- スラブかを判定
+function detectSLAB()
+	turtle.select(SLAB)
+	if turtle.compareDown() then
+		unloadChest(12,11)
+		turtle.back()
+		return true
+	else
+		return false
+	end
+end
+
+-- 回転
+function turn(n,dir)
+	for i = 1, n do
+ 		turtle["turn"..dir]()
+		turtle.forward()
+	 end 
+end
+
+-- 回転カウントetc
+function turnFunc(dir)
+	tfg.write_msg(tostring(dir))
+	turn(2,dir)
+	if detectSLAB() then
+		turtle.turnRight()
+		turtle.forward()
+		turtle.turnLeft()
+		turtle.forward()
+	end
+	count = count + 1
+	tfg.write_msg(count)
+end
+
+-- 田植と収穫 
+function whet2seed(slot)
+	turtle.digDown()
+	turtle.select(slot)
+	turtle.placeDown()
+end
+
+-- フェンスの上を歩く
+function throughFence()
+	turtle.turnLeft()
+	while turtle.forward() do
+	end
+	for i = 1, 11 do
+		turtle.select(i)
+		turtle.drop()
+	end
+	return true
+end
+
+os.startTimer(3600)
+if loadTfg() then
+	while true do
+		tfg.write_msg("-- wait --")
+		local type, timer_id = os.pullEvent("timer") -- タイマー待ち
+		tfg.write_msg("-- start roop --")
+		turtle.forward()
+		while true do
+			turtle.select(FENCE)
+			if not turtle.compareDown() then -- フェンスじゃなかったら
+				turtle.select(CHEST)
+				if turtle.compareDown() then -- チェストだったら
+					throughFence()
+					tfg.write_msg("-- end --")
+					turtle.turnLeft()
+					--タイマーセット
+					os.startTimer(3600) -- timerId
+				else
+					tfg.write_msg("go")
+					whet2seed(SEED) -- 収穫と田植をする
+					turtle.forward() -- 前進する
+					tfg.itemCollect(SEED)
+					tfg.autoRefuel(15)		
+				end	
+			else
+				tfg.write_msg("fence")
+				if 1 == count%2 then --奇数だったら
+					turnFunc("Left")
+				else
+					turnFunc("Right")
+				end
+			end
+		end
+	end
+end

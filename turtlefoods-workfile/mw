@@ -1,0 +1,133 @@
+-- トンネルの長さを入力 --
+local args = { ... }
+x = tonumber(args[1])
+y = tonumber(args[2]) -- 高さを入力したらその分だけブロックをつみあげる
+
+torch = 0 -- 松明カウント用変数 --
+fuel = 0 -- 燃料表示用変数 --
+height = 0 -- 高さ管理用
+mw = 0 -- 進んだ距離
+st = 0 -- 使った石
+
+h = fs.open("/log", "a") -- ログファイルに出力する
+h.write("---- start ---- \n")
+
+-- ログ出力機能
+function write_msg(msg)
+	h.write(tostring(msg).."\n")
+	h.flush()
+end
+
+function erorrLog(r,e)
+	if not r then
+		write_msg(e)
+	end
+end
+
+-- 現在の燃料を表示 --
+fuel = turtle.getFuelLevel()
+print ("------------\n"..fuel.."dayo!\n------------")
+
+-- 入力された値に対して燃料が足りているか調べる --
+if tonumber(fuel) <= tonumber(x)*3 then -- *3は帰りの分の燃料 --
+	local r,e = turtle.refuel(64)
+	erorrLog(r,e)
+end
+
+-- 松明を置く機能 --
+function placeTorch(...)
+	turtle.turnLeft()
+	turtle.turnLeft()
+	turtle.select(16)
+	r,e = turtle.place()
+	erorrLog()
+	turtle.turnLeft()
+	turtle.turnLeft()
+end
+
+-- 石を置く機能
+function placeSt()
+	if turtle.place() then
+		st = st + 1
+	end
+end
+
+function placeStD()
+	if turtle.placeDown() then
+		st = st + 1
+	end
+end
+
+function placeStU()
+	if turtle.placeUp() then
+		st = st + 1
+	end
+end
+
+function wall(...)
+	turtle.turnRight()
+	placeSt()
+	turtle.turnRight()
+	turtle.turnRight()
+	placeSt()
+	turtle.turnRight()
+end
+
+function floor(...)
+	turtle.dig()
+	turtle.digUp()
+	turtle.forward()
+	turtle.digUp()
+	placeStD()
+	torch = torch + 1
+	mw = mw + 1
+	if torch == 7 then
+		placeTorch()
+		torch = 0
+		turtle.select(1)
+		write_msg("place torch")
+	end
+end
+
+function itemCorrect(...)
+	if 10 >= turtle.getItemCount(1) then
+		turtle.select(1)
+		for i = 1, 14 do
+			if turtle.compareTo(i) then -- もし同じだったら
+				turtle.select(i)
+				turtle.transferTo(1) -- 16に移動させる
+			end
+		end
+	end
+	turtle.select(1)
+	if 10 >= turtle.getItemCount(1) then
+		os.shutdown()
+	end
+end
+
+for i = 1, x do
+	turtle.select(1)
+	itemCorrect()
+	placeStD()
+	wall()
+	write_msg("first wall")
+	if y > 1 then
+		for i = 1, y do
+			if i ~= y then -- yと繰り返し回数が一緒じゃなければ
+				write_msg("up")
+				turtle.digUp()
+				turtle.up()
+				wall()
+				height = height + 1
+			end
+		end
+		for i = 1, height do
+			turtle.down()
+		end
+	end
+	floor()
+	print (mw)
+end
+turtle.back()
+turtle.back()
+print ("use "..st.." items")

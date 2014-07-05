@@ -1,0 +1,55 @@
+local args = { ... }
+z = args[1] -- 奥行
+x = args[2] -- 幅
+count = 0
+
+h = fs.open("/log", "a") -- ログファイルに出力する
+h.write("---- start ---- \n")
+
+function erorrLog(...)
+	if not r then
+		h.write(tostring(e).."\n")
+		h.flush()
+	end
+end
+
+function taue(...)
+	turtle.forward()
+	turtle.digDown()
+	count = count + 1
+	h.write("go "..count.."\n")
+	h.flush()
+end
+
+function right(...) -- 右へ向く
+	turtle.turnRight()
+	turtle.forward()
+	turtle.turnRight()
+	turtle.digDown()
+	h.write("right\n")
+	h.flush()
+end
+
+function left(...) -- 左へ向く
+	turtle.turnLeft()
+	turtle.forward()
+	turtle.turnLeft()
+	turtle.digDown()
+	h.write("left\n")
+	h.flush()
+end
+
+turtle.digDown()
+for i = 1, x do
+	for j = 1, z do
+		taue() -- ここに奥行の処理
+	end
+	count = 0
+	if i ~= x then
+		if 1 == i%2 then
+			right() --　奇数だったら
+		else
+			left() -- 偶数だったら
+		end
+	end
+end
