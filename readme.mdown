@@ -1,0 +1,46 @@
+# Turtle Foods General Library
+
+「タートルとごはん」という動画内で良く使う機能をまとめたComputer Craftのライブラリです。
+
+## Install
+
+[http://pastebin.com/uY0RRh5m](http://pastebin.com/uY0RRh5m)
+
+1. 上記URLへアクセスし、ページ下部にあるテキストエリアフォームからコードをコピーします。
+2. エディタで保存します。拡張子は不要です。
+3. Minecraft内で利用したいタートルのIDを調べておきます。
+  * タートルのコンソールで'id'と入力すればOK
+3. MinecraftのSavesフォルダ > ワールド名内にある「computer」というフォルダを開きます
+4. 3で調べたid名のフォルダへ、保存したファイルを移動します。
+5. Minecraft内で'ls'と入力し、ファイルがあるかを確認します。
+
+## How to use
+6. 新規にファイルを作成し、「os.loadAPI(tfg)」と書いてライブラリを読み込みます。
+7. 頭に「tfg.」と付けて、tfg内の関数を呼び出します。
+
+## Sample code
+
+    --- api呼出
+    function loadFile(file)
+      if os.loadAPI(file) then
+        return true
+      else
+        print (file.."can't load")
+        return false
+      end 
+    end
+
+    loadFile("tfg") -- ライブラリ呼出
+
+    local touch = 0 -- 変数を初期化
+    for i = 1, 10 do
+      turtle.forward()
+      touch = touch + 1 
+      tfg.placeTorch(16,touch)
+    end
+
+## exemption from responsibility
+
+導入は自己責任で行ってください。
+
+下手クソなコードなのでレビューなどはとっても嬉しいです。

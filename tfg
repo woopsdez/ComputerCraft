@@ -55,6 +55,7 @@ function autoRefuel(slot)
 	if turtle.getFuelLevel() <= 80 then
 		turtle.select(slot)
 		local r,e = turtle.refuel(64)
+		print(e)
 		erorrLog(r,e)
 	end
 end
@@ -62,12 +63,13 @@ end
 --[[ ///////// 松明 ///////// ]]--
 
 -- 松明を置く機能
-function placeTorch(slot)
-	if touch == 6 then
+function placeTorch(slot,valables)
+	if valables == 6 then
 		turtle.turnLeft()
 		turtle.turnLeft()
 		turtle.select(slot)
 		r,e = turtle.place()
+		print(e)
 		erorrLog(r,e)
 		turtle.turnLeft()
 		turtle.turnLeft()
