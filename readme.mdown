@@ -20,24 +20,28 @@
 
 ## Sample code
 
-    --- api呼出
-    function loadFile(file)
-      if os.loadAPI(file) then
-        return true
-      else
-        print (file.."can't load")
-        return false
-      end 
-    end
+```lua
 
-    loadFile("tfg") -- ライブラリ呼出
+--- api呼出
+function loadFile(file)
+  if os.loadAPI(file) then
+    return true
+  else
+    print (file.."can't load")
+    return false
+  end 
+end
 
-    local touch = 0 -- 変数を初期化
-    for i = 1, 10 do
-      turtle.forward()
-      touch = touch + 1 
-      tfg.placeTorch(16,touch)
-    end
+loadFile("tfg") -- ライブラリ呼出
+
+local touch = 0 -- 変数を初期化
+for i = 1, 10 do
+  turtle.forward()
+  touch = touch + 1 
+  tfg.placeTorch(16,touch)
+end
+    
+```
 
 ## exemption from responsibility
 
