@@ -7,71 +7,157 @@ h.close()
 
 -- ログ出力機能
 function write_msg(msg)
-	h = fs.open("/log", "a")
-	h.write(tostring(msg).."\n")
-	h.close()
+  print (msg)
+  h = fs.open("/log", "a")
+  h.write(tostring(msg).."\n")
+  h.close()
 end
 
-function erorrLog(r,e)
-	if not r then
-		h = fs.open("/log", "a")
-		write_msg(e)
-		h.close()
-	end
+function errorLog(r,e)
+  if not r then
+    h = fs.open("/log", "a")
+    write_msg(e)
+    h.close()
+  end
 end
 
 --[[ ///////// アイテム移動 ///////// ]]--
 
 -- アイテムを特定スロットに補充する機能
 function itemCollect(slot)
-	if 10 >= turtle.getItemCount(slot) then
-		turtle.select(slot)
-		for i = 1, 16 do
-			turtle.select(i)
-			turtle.transferTo(slot)
-		end
-		turtle.select(slot)
-	end
+  if 10 >= turtle.getItemCount(slot) then
+    turtle.select(slot)
+    for i = 1, 16 do
+      turtle.select(i)
+      turtle.transferTo(slot)
+    end
+    turtle.select(slot)
+  end
 end
 
 -- アイテムドロップする機能 範囲をjで指定
-function itemDrop(j)
-	for i = 1, j do
-		turtle.select(i)
-		turtle.drop()
-	end
+function itemDrop(slot)
+  for i = 1, slot do
+    turtle.select(i)
+    turtle.drop()
+  end
 end
+
+-- アイテム総数をカウントする機能
+-- slotでカウント範囲を指定
+function getAllItem(slot)
+  local ct = 0
+  for i = 1, slot do
+    ct = ct + turtle.getItemCount(i)
+  end
+  tfg.write_msg("I digged item "..ct)
+end
+
+-- 一定感覚でアイテムを配置したいとき
+function placeItem(slot,count,space)
+  if count == space then
+    turtle.turnLeft()
+    turtle.turnLeft()
+    turtle.select(slot)
+    r,e = turtle.place()
+    print(e)
+    errorLog(r,e)
+    turtle.turnLeft()
+    turtle.turnLeft()
+  end
+  count = 0
+end
+
 
 --[[ ///////// 燃料関連 ///////// ]]--
 
 -- 現在の燃料を表示
 function fuelPrint()
-	print ("------------\n"..turtle.getFuelLevel().."dayo!\n------------")
+  fuelLvCount = "------------\n"..turtle.getFuelLevel().."dayo!\n------------"
+  print (fuelLvCount)
+  write_msg(fuelLvCount)
 end
 
--- 渡した引数より少なければ補給する
--- TODO 移動距離から必要燃料を算出する関数
-function autoRefuel(slot)
-	if turtle.getFuelLevel() <= 80 then
-		turtle.select(slot)
-		local r,e = turtle.refuel(64)
-		print(e)
-		erorrLog(r,e)
-	end
+-- 燃料が80より少なければ補給する
+-- 引数はslotと補給したい数
+function autoRefuel(slot,count)
+  if turtle.getFuelLevel() <= 80 then
+    turtle.select(slot)
+    local r,e = turtle.refuel(init)
+    print(e)
+    errorLog(r,e)
+  end
 end
 
---[[ ///////// 松明 ///////// ]]--
+-- 起動時に算出して燃料を補給する
+function bootingRefuel(length,use,slot)
+  fuelPrint() -- 現在の燃料を表示 --
 
--- 松明を置く機能
-function placeTorch(slot,valables)
-	if valables == 6 then
-		turtle.turnLeft()
-		turtle.turnLeft()
-		turtle.select(slot)
-		r,e = turtle.place()
-		print(e)
-		erorrLog(r,e)
-		turtle.turnLeft()
-		turtle.turnLeft()
-	end
+  -- xに対して燃料が足りているか調べる --
+  local wantFuelLv = length * use -- 必要な燃料を算出
+  local needFuelLv = turtle.getFuelLevel() - wantFuelLv -- 必要な燃料で現在の燃料を引く
+  write_msg("want "..wantFuelLv)
+  write_msg("need "..needFuelLv)
+
+  while 0 >= needFuelLv do --燃料がプラスになるまで繰り返す
+    turtle.select(slot)
+    -- もし足りなかったら(もしrefuelでエラーがかえったら)
+    if not turtle.refuel(0) then
+      r,e = turtle.refuel(1)
+      -- エラー文を表示
+      write_msg(e)
+      return false -- 処理を中断する
+    end
+    -- 現在の燃料を取得してローカル変数「fl」に格納
+    local fl = turtle.getFuelLevel()
+    -- 現在の燃料がプラスになるか計算する
+    needFuelLv = fl - wantFuelLv
+    -- 分かりづらいので、ちょこちょこプリントする
+    textutils.slowPrint("now "..fl.."...")
+  end
+  turtle.select(1)
+  write_msg("done") -- 補給終了
+end
+
+--[[ ///////// 移動関連 ///////// ]]--
+
+-- 帰ってくる機能
+-- xの数だけbackする
+function getHome(x)
+  for i = 1, x do
+    turtle.back()
+  end
+end
+
+-- 現在の位置から両サイドにターンしてメソッドを実行
+-- 引数にメソッド名の「turtle.」を抜いたものを文字列で渡す
+function turnAround(methodStr)
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+  turtle.turnLeft()
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+end
+
+--[[ ///////// ユーザー入力関連 ///////// ]]--
+
+-- y/nの二択用 それ以外の文字列が返ってきたら処理を繰り返す
+function userInputWait(msg)
+  while true do
+    print(msg)
+    local ans = read()
+    if ans == "y" then
+      return true
+    elseif ans == "n" then
+      return false
+    end
+  end
 end

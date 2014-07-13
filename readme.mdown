@@ -1,6 +1,149 @@
 # Turtle Foods General Library
 
-「タートルとごはん」という動画内で良く使う機能をまとめたComputer Craftのライブラリです。
+[「タートルとごはん」](http://www.nicovideo.jp/mylist/44126657)という動画内で良く使う機能をまとめたComputer Craft(以降CC)のライブラリです。
+
+# 機能解説
+
+## ログ表示
+logファイルが自動で作成されます。
+
+### write_msg(msg)
+```lua
+tfg.write_msg("Hello World!")
+```
+プリントとログファイルへの出力を同時に行う。
+
+### errorLog(r,e)
+
+```lua
+r,e = turtle.dig()
+tfg.errorLog
+```
+
+CCのメソッドのほとんどは、処理のしたときに戻り値としてrにブーリアン型、eにエラーメッセージを入れます。
+
+これを利用してfalseが返ってきたときのみ、動作してエラー文を表示させる。
+  
+## アイテム移動
+### itemCollect(slot)
+
+```lua
+tfg.itemCollect(16)
+```
+slotのアイテムが10以下になったとき、他スロットからアイテムを集めてくる。
+
+> 外壁を作るときの丸石や、田植をするときの種を集めるのに使うと便利。
+
+### itemDrop(slot)
+
+```lua
+tfg.itemCollect(3)
+```
+
+slotまでのスロットからアイテムをドロップする
+
+> ドロップしたくないアイテムを最後の方に集めておいて使うと便利。
+
+### getAllItem(slot)
+
+```lua
+tfg.getAllItem(3)
+```
+
+slotまでのアイテムの総数を表示する
+
+> ブランチマイニングさせるときなどにどのくらいアイテムをゲットできたか調べてうっとりするのに便利
+
+### placeItem(slot,count,space)
+```lua
+torch = torch + 1 
+tfg.placeItem(16,torch,6)
+```
+一定間隔でアイテムを配置する
+
+slot：配置したいアイテムのスロットを指定
+count：カウントアップで使っている変数を入れる
+space：間隔を指定
+
+** countはサンプルコードのように、事前に+1を足してカウントアップしておく必要があります。**
+
+> 松明を置くときに超便利！
+
+## 燃料補給
+
+### fuelPrint()
+```lua
+tfg.fuelPrint()
+```
+
+現在の燃料を表示
+
+> バグで詰まっているときに無用な苦労をしないために必要！
+
+### autoRefuel(slot,count)
+```lua
+tfg.autoRefuel(14,10)
+```
+燃料が80より少なければ補給をする
+
+燃料スロットと、使用する数を指定
+
+> 起動時点でどのくらい燃料が必要か目処がたたないときに便利！
+
+### bootingRefuel(length,use,slot)
+```lua
+tfg.bootingRefuel(x,cons,14)
+```
+lengthとuseを用いて移動に必要な燃料を算出し、現在の燃料がそれに足りなければ指定したスロットから燃料を補給。
+
+length：移動距離
+use：1マスあたりでの燃料消費数
+slot：燃料用のスロットを指定
+
+> ブランチマイニングや橋、階段作りなど、進む距離が決まっているときに便利。
+
+## タートル移動
+
+### getHome(x)
+```lua
+tfg.getHome(x)
+```
+
+xの長さだけバックして移動。
+
+> xの処理分進んで、そのまま戻らせたいときにべん…り？
+
+### turnAround(methodStr)
+```lua
+-- 掘りたいとき
+tfg.turnAround("dig")
+-- 置きたいとき
+tfg.turnAround("place")
+-- 攻撃したいとき
+tfg.turnAround("attack")
+```
+現在の位置から両サイドにターンしてメソッドを実行。
+左まわりで回転し、正面、左右に実行します。
+
+** 背面には実行しません**
+
+> まわりを掘りすすめたり、外壁を作るときに便利！
+
+## ユーザー入力
+### userInputWait(msg)
+
+```lua
+tfg.userInputWait("Do you like Sushi? [y/n]")
+```
+
+ユーザーからの入力によって分岐する機能。yes noの二択用。それ以外の文字列が返ってきたら処理を繰り返す。
+
+> 続けますか？ これでいいですか？ とかしたいときに便利
+
+# Computer Craft バージョン
+1.63
+
+----
 
 ## Install
 
