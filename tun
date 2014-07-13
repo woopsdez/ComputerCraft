@@ -1,0 +1,102 @@
+-- ライブラリを読み込む
+if not os.loadAPI("tfg") then
+	print("can't load... ")
+end
+
+--[[ ///////// 変数管理 ///////// ]]--
+
+-- 掘り進めたい長さを入力 --
+local args = { ... }
+local x = args[1]
+local come = args[2]
+local cons = 2
+local torch = 0 -- 松明カウント用変数
+local fuel = 0 -- 燃料表示用変数
+-- もし、帰宅機能がオンなら
+if come == "on" then
+	cons = 4 -- 燃料計算用の必要歩数を4にする
+end
+
+--[[ ///////// 関数定義 ///////// ]]--
+
+-- 右下スロット3つに必要なものがあるかのチェックをする
+function checkItem()
+	items = {[14]="fuel item", [15]="chest", [16]="torch"}
+	for key,value in pairs(items) do --pseudocode
+    if 0 == turtle.getItemCount(key) then
+			return false, value
+		end
+  end
+	return true, "Item exists"
+end
+
+-- もし足りないアイテムがあったらこのまま進めていいか確認する
+function checkItemFlag()
+	r,e = checkItem()
+	if not r then
+		return tfg.userInputWait("I have no "..e.." Can I start ? [y/n]")
+	end
+	return true
+end
+
+-- 終わったらアイテムをチェストに格納する機能 --
+function inChest()
+	turtle.turnRight()
+	turtle.turnRight()
+	tfg.write_msg("turn")
+	turtle.dig() 	-- チェストを置くときに松明があったときのため
+	turtle.select(15)
+	-- チェストが無いときはプログラムを停止する
+	if 0 == turtle.getItemCount(15) then
+		return false
+	end
+	turtle.place()
+	tfg.write_msg("place")
+	tfg.itemDrop(13)
+	tfg.write_msg("drop")
+	turtle.turnRight()
+	turtle.turnRight()
+	tfg.write_msg("turn back")
+	tfg.write_msg("done")
+	turtle.select(1)
+	return true
+end
+
+function mainDo()
+	local step = 0
+	for i = 1, x do
+		tfg.turnAround("dig")
+		turtle.digUp()
+		turtle.up()
+		tfg.turnAround("dig")
+		turtle.down()
+		-- 13番目のスロットのアイテム数が0じゃなかったら
+		if 0 ~= turtle.getItemCount(13) then
+			if not inChest() then -- チェストへアイテムを入れる
+				return -- この関数の処理を中断する
+			end	
+		end
+		step = step + 1
+		tfg.write_msg(step)
+		turtle.forward()
+		if not turtle.detectDown() then
+			turtle.select(1)
+			turtle.placeDown()
+		end
+
+		-- 入力された値を元に一歩進むごとにカウントする
+		torch = torch + 1 
+		tfg.placeItem(16,torch,6) 		-- カウントが6になったら置く
+	end
+end
+
+--[[ ///////// 実行部分 ///////// ]]--
+
+if checkItemFlag() then
+	tfg.bootingRefuel(x,cons,14)
+	mainDo()
+	tfg.getAllItem(13)
+	if come == "on" then
+		tfg.getHome() -- 全部の処理が終わったら帰ってくる
+	end
+end
