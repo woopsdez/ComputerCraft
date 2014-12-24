@@ -190,21 +190,6 @@ function userInputYN(msg,yStr,nStr)
   end
 end
 
--- [[ ////////// レッドストーン入出力 ////////// ]]--
-function switch(rsDir)
-  rs.setOutput(rsDir, true)
-  sleep(1)
-  rs.setOutput(rsDir, false)
-end
-
--- [[ ////////// レッドネット送信系 ////////// ]]--
-function sendRedNetMsg(id,msg)
-  r , modemDir = checkPeripheral("modem")
-  rednet.open(modemDir)
-  rednet.send(id,msg,true)
-  rednet.close(modemdir)
-  writMsg("sent message")
-end
 
 -- [[ ////////// 周辺機器 ////////// ]]--
 function listPeripheral()
@@ -223,4 +208,20 @@ function checkPeripheral(typeStr)
     return false
   end
   return true , dir
+end
+
+-- [[ ////////// レッドストーン入出力 ////////// ]]--
+function switch(rsDir)
+  rs.setOutput(rsDir, true)
+  sleep(1)
+  rs.setOutput(rsDir, false)
+end
+
+-- [[ ////////// レッドネット送信系 ////////// ]]--
+function sendRedNetMsg(id,msg)
+  r , modemDir = checkPeripheral("modem")
+  rednet.open(modemDir)
+  rednet.send(id,msg,true)
+  rednet.close(modemdir)
+  writeMsg("sent message")
 end
