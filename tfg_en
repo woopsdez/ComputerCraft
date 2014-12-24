@@ -1,0 +1,178 @@
+--[[ ///////// log printing ///////// ]]--
+
+-- if loaded API
+h = fs.open("/log", "a") -- print log
+h.write("---- start ---- \n")
+h.close()
+
+-- log print method
+function write_msg(msg)
+  print (msg)
+  h = fs.open("/log", "a")
+  h.write(tostring(msg).."\n")
+  h.close()
+end
+
+-- error log only print method
+function errorLog(r,e)
+  if not r then
+    h = fs.open("/log", "a")
+    write_msg(e)
+    h.close()
+  end
+end
+
+--[[ ///////// item move ///////// ]]--
+
+-- Move items to appoint slot 
+function itemCollect(slot)
+  if 10 >= turtle.getItemCount(slot) then
+    turtle.select(slot)
+    for i = 1, 16 do
+      turtle.select(i)
+      turtle.transferTo(slot)
+    end
+    turtle.select(slot)
+  end
+end
+
+-- Drop item method. Range specification for "j"
+function itemDrop(slot,dirStr)
+  for i = 1, slot do
+    turtle.select(i)
+    if dirStr == nil then
+        turtle["drop"..dirStr]()
+    end
+    turtle.drop()
+  end
+end
+
+-- item count method
+function getAllItem(slot)
+  local ct = 0
+  for i = 1, slot do
+    ct = ct + turtle.getItemCount(i)
+  end
+  tfg.write_msg("I digged item "..ct)
+end
+
+-- Place the items in a certain sense
+function placeItem(slot,count,space)
+  if count == space then
+    turtle.turnLeft()
+    turtle.turnLeft()
+    turtle.select(slot)
+    r,e = turtle.place()
+    print(e)
+    errorLog(r,e)
+    turtle.turnLeft()
+    turtle.turnLeft()
+  end
+  count = 0
+end
+
+
+-- compare items method
+function itemCompare(slot,dirStr)
+  turtle.select(slot)
+  if not turtle["compare"..dirStr]() then
+    turtle.select(1)
+    return false
+  end
+  turtle.select(1)
+  return true
+end
+
+--[[ ///////// fuel ///////// ]]--
+
+-- View the current fuel
+function fuelPrint()
+  fuelLvCount = "------------\n"..turtle.getFuelLevel().."dayo!\n------------"
+  write_msg(fuelLvCount)
+end
+
+-- replenish fuel is less than 80
+-- Argument number you want to supply the slot
+function autoRefuel(slot,count)
+  if turtle.getFuelLevel() <= 80 then
+    turtle.select(slot)
+    if count == nil then
+      count = 1
+    end
+    local r,e = turtle.refuel(count)
+    errorLog(r,e)
+  end
+end
+
+-- To replenish the fuel by calculating the fuel required for startup
+function bootingRefuel(length,use,slot)
+  fuelPrint() -- View the current fuel
+
+  -- examine fuel is made to see whether there are enough with respect to the x
+  local wantFuelLv = length * use -- It calculates the required fuel
+  local needFuelLv = turtle.getFuelLevel() - wantFuelLv --Draw the current fuel in the required fuel
+  write_msg("want "..wantFuelLv)
+  write_msg("need "..needFuelLv)
+
+  while 0 >= needFuelLv do -- Repeat fuel until the plus
+    turtle.select(slot)
+    -- If an error back with refuel
+    if not turtle.refuel(1) then
+      r,e = turtle.refuel(1)
+      -- print error log
+      write_msg(e)
+      return false -- Processing is interrupted
+    end
+    -- The stored local variable "fl" by obtaining the current fuel
+    local fl = turtle.getFuelLevel()
+    -- Calculate fuel whether the current be positive
+    needFuelLv = fl - wantFuelLv
+    -- Each time, will print
+    textutils.slowPrint("now "..fl.."...")
+  end
+  turtle.select(1)
+  write_msg("done") -- Supply end
+end
+
+--[[ ///////// turtle move ///////// ]]--
+
+-- Ability to come back
+-- Will be back only the number of x
+function getHome(x)
+  for i = 1, x do
+    turtle.back()
+  end
+end
+
+-- Run method in turn on both sides from the current position
+-- Passing a string that you disconnect the method name "turtle." Argument
+function turnAround(methodStr)
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+  turtle.turnLeft()
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+  turtle.turnLeft()
+  while turtle[methodStr]() do
+    os.sleep(0.4)
+  end 
+end
+
+--[[ ///////// User input related ///////// ]]--
+
+-- To repeat the process if you received a string of choices. Otherwise the two
+function userInputWait(msg)
+  while true do
+    print(msg)
+    local ans = read()
+    if ans == "y" then
+      return true
+    elseif ans == "n" then
+      return false
+    end
+  end
+end

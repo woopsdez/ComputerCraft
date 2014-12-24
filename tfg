@@ -6,7 +6,7 @@ h.write("---- start ---- \n")
 h.close()
 
 -- ログ出力機能
-function write_msg(msg)
+function writeMsg(msg)
   print (msg)
   h = fs.open("/log", "a")
   h.write(tostring(msg).."\n")
@@ -16,7 +16,7 @@ end
 function errorLog(r,e)
   if not r then
     h = fs.open("/log", "a")
-    write_msg(e)
+    writeMsg(e)
     h.close()
   end
 end
@@ -25,20 +25,32 @@ end
 
 -- アイテムを特定スロットに補充する機能
 function itemCollect(slot)
-  if 10 >= turtle.getItemCount(slot) then
-    turtle.select(slot)
-    for i = 1, 16 do
-      turtle.select(i)
-      turtle.transferTo(slot)
-    end
-    turtle.select(slot)
+  -- LOG 10.10.2014 10個より少なかったらアイテムを集める
+  -- LOG 12.23.2014 上記条件を削除
+
+  -- 現在のアイテム数を記憶
+  local startCount = turtle.getItemCount(slot)
+  for i = 1, 16 do
+    turtle.select(i)
+    turtle.transferTo(slot)
   end
+  turtle.select(slot)
+  local endCount = turtle.getItemCount(slot)
+
+  -- アイテム数が増えていたら成功
+  if startCount >= endCount then
+      return false
+  end
+  return true
 end
 
 -- アイテムドロップする機能 範囲をjで指定
-function itemDrop(slot)
+function itemDrop(slot,dirStr)
   for i = 1, slot do
     turtle.select(i)
+    if dirStr ~= nil then
+        turtle["drop"..dirStr]()
+    end
     turtle.drop()
   end
 end
@@ -50,7 +62,8 @@ function getAllItem(slot)
   for i = 1, slot do
     ct = ct + turtle.getItemCount(i)
   end
-  tfg.write_msg("I digged item "..ct)
+  tfg.writeMsg("I digged item "..ct)
+  return ct
 end
 
 -- 一定感覚でアイテムを配置したいとき
@@ -60,22 +73,32 @@ function placeItem(slot,count,space)
     turtle.turnLeft()
     turtle.select(slot)
     r,e = turtle.place()
-    print(e)
+    tfg.writeMsg(torch)
     errorLog(r,e)
     turtle.turnLeft()
     turtle.turnLeft()
   end
-  count = 0
 end
 
+
+-- アイテムを比較する
+function itemCompare(slot,dirStr,target)
+  turtle.select(slot)
+  if dirStr == nill then
+    dirStr = ""
+  end
+  if not turtle["compare"..dirStr](target) then
+    return false
+  end
+  return true
+end
 
 --[[ ///////// 燃料関連 ///////// ]]--
 
 -- 現在の燃料を表示
 function fuelPrint()
   fuelLvCount = "------------\n"..turtle.getFuelLevel().."dayo!\n------------"
-  print (fuelLvCount)
-  write_msg(fuelLvCount)
+  writeMsg(fuelLvCount)
 end
 
 -- 燃料が80より少なければ補給する
@@ -83,8 +106,10 @@ end
 function autoRefuel(slot,count)
   if turtle.getFuelLevel() <= 80 then
     turtle.select(slot)
-    local r,e = turtle.refuel(init)
-    print(e)
+    if count == nil then
+      count = 1
+    end
+    local r,e = turtle.refuel(count)
     errorLog(r,e)
   end
 end
@@ -96,16 +121,16 @@ function bootingRefuel(length,use,slot)
   -- xに対して燃料が足りているか調べる --
   local wantFuelLv = length * use -- 必要な燃料を算出
   local needFuelLv = turtle.getFuelLevel() - wantFuelLv -- 必要な燃料で現在の燃料を引く
-  write_msg("want "..wantFuelLv)
-  write_msg("need "..needFuelLv)
+  writeMsg("want "..wantFuelLv)
+  writeMsg("need "..needFuelLv)
 
   while 0 >= needFuelLv do --燃料がプラスになるまで繰り返す
     turtle.select(slot)
     -- もし足りなかったら(もしrefuelでエラーがかえったら)
-    if not turtle.refuel(0) then
+    if not turtle.refuel(1) then
       r,e = turtle.refuel(1)
       -- エラー文を表示
-      write_msg(e)
+      writeMsg(e)
       return false -- 処理を中断する
     end
     -- 現在の燃料を取得してローカル変数「fl」に格納
@@ -116,7 +141,7 @@ function bootingRefuel(length,use,slot)
     textutils.slowPrint("now "..fl.."...")
   end
   turtle.select(1)
-  write_msg("done") -- 補給終了
+  writeMsg("done") -- 補給終了
 end
 
 --[[ ///////// 移動関連 ///////// ]]--
@@ -160,4 +185,11 @@ function userInputWait(msg)
       return false
     end
   end
+end
+
+-- [[ ////////// レッドストーン入出力 ////////// ]]--
+function switch(rsDir)
+  writeMsg(rs.setOutput(rsDir, true))  
+  sleep(1)
+  writeMsg(rs.setOutput(rsDir, false))
 end

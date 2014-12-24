@@ -43,7 +43,7 @@ end
 function inChest()
 	turtle.turnRight()
 	turtle.turnRight()
-	tfg.write_msg("turn")
+	tfg.writeMsg("turn")
 	turtle.dig() 	-- チェストを置くときに松明があったときのため
 	turtle.select(15)
 	-- チェストが無いときはプログラムを停止する
@@ -51,13 +51,13 @@ function inChest()
 		return false
 	end
 	turtle.place()
-	tfg.write_msg("place")
+	tfg.writeMsg("place")
 	tfg.itemDrop(13)
-	tfg.write_msg("drop")
+	tfg.writeMsg("drop")
 	turtle.turnRight()
 	turtle.turnRight()
-	tfg.write_msg("turn back")
-	tfg.write_msg("done")
+	tfg.writeMsg("turn back")
+	tfg.writeMsg("done")
 	turtle.select(1)
 	return true
 end
@@ -77,7 +77,7 @@ function mainDo()
 			end	
 		end
 		step = step + 1
-		tfg.write_msg(step)
+		tfg.writeMsg(step)
 		turtle.forward()
 		if not turtle.detectDown() then
 			turtle.select(1)
@@ -85,8 +85,9 @@ function mainDo()
 		end
 
 		-- 入力された値を元に一歩進むごとにカウントする
-		torch = torch + 1 
-		tfg.placeItem(16,torch,6) 		-- カウントが6になったら置く
+		torch = torch + 1
+		tfg.placeItem(16,torch,6)-- カウントが6になったら置く
+		torch = 0
 	end
 end
 
