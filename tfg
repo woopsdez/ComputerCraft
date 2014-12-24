@@ -80,7 +80,6 @@ function placeItem(slot,count,space)
   end
 end
 
-
 -- アイテムを比較する
 function itemCompare(slot,dirStr,target)
   turtle.select(slot)
@@ -193,7 +192,35 @@ end
 
 -- [[ ////////// レッドストーン入出力 ////////// ]]--
 function switch(rsDir)
-  writeMsg(rs.setOutput(rsDir, true))  
+  rs.setOutput(rsDir, true)
   sleep(1)
-  writeMsg(rs.setOutput(rsDir, false))
+  rs.setOutput(rsDir, false)
+end
+
+-- [[ ////////// レッドネット送信系 ////////// ]]--
+function sendRedNetMsg(id,msg)
+  r , modemDir = checkPeripheral("modem")
+  rednet.open(modemDir)
+  rednet.send(id,msg,true)
+  rednet.close(modemdir)
+  writMsg("sent message")
+end
+
+-- [[ ////////// 周辺機器 ////////// ]]--
+function listPeripheral()
+  for n,v in ipairs (peripheral.getNames()) do
+    number = tostring(n)
+    dir = tostring(v)
+    type = peripheral.getType(v)
+    textutils.tabulate({number , dir , type})
+  end
+  return number , dir , type
+end
+
+function checkPeripheral(typeStr)
+  number , dir , type = listPeripheral()
+  if not typeStr == type then
+    return false
+  end
+  return true , dir
 end
