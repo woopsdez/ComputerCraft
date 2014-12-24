@@ -175,13 +175,17 @@ end
 --[[ ///////// ユーザー入力関連 ///////// ]]--
 
 -- y/nの二択用 それ以外の文字列が返ってきたら処理を繰り返す
-function userInputWait(msg)
+-- msg > 表示用メッセージ
+-- yStr > true時に入力させたい文
+-- nStr > false時に入力させたい文
+
+function userInputYN(msg,yStr,nStr)
   while true do
     print(msg)
     local ans = read()
-    if ans == "y" then
+    if ans == yStr then
       return true
-    elseif ans == "n" then
+    elseif ans == nStr then
       return false
     end
   end
