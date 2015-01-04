@@ -1,98 +1,101 @@
---[[ ///////// log printing ///////// ]]--
+--[[ ///////// logging ///////// ]]--
 
--- if loaded API
-h = fs.open("/log", "a") -- print log
+h = fs.open("/log", "a") 
 h.write("---- start ---- \n")
 h.close()
 
--- log print method
-function write_msg(msg)
+function writeMsg(msg)
   print (msg)
   h = fs.open("/log", "a")
   h.write(tostring(msg).."\n")
   h.close()
 end
 
--- error log only print method
 function errorLog(r,e)
   if not r then
     h = fs.open("/log", "a")
-    write_msg(e)
+    writeMsg(e)
     h.close()
   end
 end
 
---[[ ///////// item move ///////// ]]--
+--[[ ///////// move items ///////// ]]--
 
--- Move items to appoint slot 
+-- item corrects from other slot
 function itemCollect(slot)
-  if 10 >= turtle.getItemCount(slot) then
-    turtle.select(slot)
-    for i = 1, 16 do
-      turtle.select(i)
-      turtle.transferTo(slot)
-    end
-    turtle.select(slot)
+
+  -- storing the number of the current item
+  local startCount = turtle.getItemCount(slot)
+  for i = 1, 16 do
+    turtle.select(i)
+    turtle.transferTo(slot)
   end
+  turtle.select(slot)
+  local endCount = turtle.getItemCount(slot)
+
+  -- Success When the number of items has increased
+  if startCount >= endCount then
+      return false
+  end
+  return true
 end
 
--- Drop item method. Range specification for "j"
+-- The specified range for the slot
 function itemDrop(slot,dirStr)
   for i = 1, slot do
     turtle.select(i)
-    if dirStr == nil then
+    if dirStr ~= nil then
         turtle["drop"..dirStr]()
     end
     turtle.drop()
   end
 end
 
--- item count method
+-- Count the items total
+-- The specified range for the slot
 function getAllItem(slot)
   local ct = 0
   for i = 1, slot do
     ct = ct + turtle.getItemCount(i)
   end
-  tfg.write_msg("I digged item "..ct)
+  tfg.writeMsg("I digged item "..ct)
+  return ct
 end
 
--- Place the items in a certain sense
+-- Place the item at regular intervals
 function placeItem(slot,count,space)
   if count == space then
     turtle.turnLeft()
     turtle.turnLeft()
     turtle.select(slot)
     r,e = turtle.place()
-    print(e)
+    tfg.writeMsg(torch)
     errorLog(r,e)
     turtle.turnLeft()
     turtle.turnLeft()
   end
-  count = 0
 end
 
-
--- compare items method
-function itemCompare(slot,dirStr)
+-- Compare items
+function itemCompare(slot,dirStr,target)
   turtle.select(slot)
-  if not turtle["compare"..dirStr]() then
-    turtle.select(1)
+  if dirStr == nill then
+    dirStr = ""
+  end
+  if not turtle["compare"..dirStr](target) then
     return false
   end
-  turtle.select(1)
   return true
 end
 
 --[[ ///////// fuel ///////// ]]--
 
--- View the current fuel
 function fuelPrint()
-  fuelLvCount = "------------\n"..turtle.getFuelLevel().."dayo!\n------------"
-  write_msg(fuelLvCount)
+  fuelLvCount = "------------\n"..turtle.getFuelLevel().."\n------------"
+  writeMsg(fuelLvCount)
 end
 
--- replenish fuel is less than 80
--- Argument number you want to supply the slot
+-- Replenish if is less than 80 fuel
 function autoRefuel(slot,count)
   if turtle.getFuelLevel() <= 80 then
     turtle.select(slot)
@@ -104,48 +107,40 @@ function autoRefuel(slot,count)
   end
 end
 
--- To replenish the fuel by calculating the fuel required for startup
+-- Is calculated at startup to replenish the fuel and refuel
 function bootingRefuel(length,use,slot)
-  fuelPrint() -- View the current fuel
+  fuelPrint()
 
-  -- examine fuel is made to see whether there are enough with respect to the x
-  local wantFuelLv = length * use -- It calculates the required fuel
-  local needFuelLv = turtle.getFuelLevel() - wantFuelLv --Draw the current fuel in the required fuel
-  write_msg("want "..wantFuelLv)
-  write_msg("need "..needFuelLv)
+  -- examine whether the fuel is enough to x
+  local wantFuelLv = length * use
+  local needFuelLv = turtle.getFuelLevel() - wantFuelLv
+  writeMsg("want "..wantFuelLv)
+  writeMsg("need "..needFuelLv)
 
-  while 0 >= needFuelLv do -- Repeat fuel until the plus
+  while 0 >= needFuelLv do
     turtle.select(slot)
-    -- If an error back with refuel
     if not turtle.refuel(1) then
       r,e = turtle.refuel(1)
-      -- print error log
-      write_msg(e)
-      return false -- Processing is interrupted
+      writeMsg(e)
+      return false
     end
-    -- The stored local variable "fl" by obtaining the current fuel
+
     local fl = turtle.getFuelLevel()
-    -- Calculate fuel whether the current be positive
     needFuelLv = fl - wantFuelLv
-    -- Each time, will print
     textutils.slowPrint("now "..fl.."...")
   end
   turtle.select(1)
-  write_msg("done") -- Supply end
+  writeMsg("done")
 end
 
---[[ ///////// turtle move ///////// ]]--
+--[[ ///////// move turtles ///////// ]]--
 
--- Ability to come back
--- Will be back only the number of x
 function getHome(x)
   for i = 1, x do
     turtle.back()
   end
 end
 
--- Run method in turn on both sides from the current position
--- Passing a string that you disconnect the method name "turtle." Argument
 function turnAround(methodStr)
   turtle.turnLeft()
   while turtle[methodStr]() do
@@ -162,17 +157,74 @@ function turnAround(methodStr)
   end 
 end
 
---[[ ///////// User input related ///////// ]]--
+--[[ ///////// userinputs ///////// ]]--
 
--- To repeat the process if you received a string of choices. Otherwise the two
-function userInputWait(msg)
+-- Two choices.
+-- Repeat the process when returned the other strings
+-- msg > print message
+-- yStr > Character you want to input at true
+-- nStr > Character you want to input at false
+
+function userInputYN(msg,yStr,nStr)
   while true do
     print(msg)
     local ans = read()
-    if ans == "y" then
+    if ans == yStr then
       return true
-    elseif ans == "n" then
+    elseif ans == nStr then
       return false
     end
   end
+end
+
+
+-- [[ ////////// Peripherals ////////// ]]--
+function listPeripheral()
+  for n,v in ipairs (peripheral.getNames()) do
+    number = tostring(n)
+    dir = tostring(v)
+    type = peripheral.getType(v)
+    textutils.tabulate({number , dir , type})
+  end
+  return number , dir , type
+end
+
+function checkPeripheral(typeStr)
+  number , dir , type = listPeripheral()
+  if not typeStr == type then
+    return false
+  end
+  return true , dir
+end
+
+-- [[ ////////// redstone switching ////////// ]]--
+function switch(rsDir)
+  rs.setOutput(rsDir, true)
+  sleep(1)
+  rs.setOutput(rsDir, false)
+end
+
+-- [[ ////////// rednet submit ////////// ]]--
+function sendRedNetMsg(id,msg)
+  r , modemDir = checkPeripheral("modem")
+  rednet.open(modemDir)
+  rednet.send(id,msg,true)
+  rednet.close(modemdir)
+  writeMsg("sent message")
+end
+
+-- [[ ////////// files ////////// ]]--
+
+-- Return true if there is a specific file
+function checkFile(filePath)
+  local fileName = fs.getName(filePath)
+  local configDir = fs.getDrive(filePath)
+
+  for i, v in ipairs(fs.list(configDir)) do
+    textutils.tabulate({i, v}) -- ファイルリスト出力
+    if v == fileName then
+      return true , i
+    end
+  end
+  return false , nil
 end

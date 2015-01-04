@@ -1,7 +1,6 @@
---[[ ///////// ログ表示関連 ///////// ]]--
+--[[ ///////// logging ///////// ]]--
 
--- プログラム起動時にAPIが呼び出されていたら
-h = fs.open("/log", "a") -- ログファイルに出力する
+h = fs.open("/log", "a") 
 h.write("---- start ---- \n")
 h.close()
 
@@ -21,14 +20,12 @@ function errorLog(r,e)
   end
 end
 
---[[ ///////// アイテム移動 ///////// ]]--
+--[[ ///////// move items ///////// ]]--
 
--- アイテムを特定スロットに補充する機能
+-- item corrects from other slot
 function itemCollect(slot)
-  -- LOG 10.10.2014 10個より少なかったらアイテムを集める
-  -- LOG 12.23.2014 上記条件を削除
 
-  -- 現在のアイテム数を記憶
+  -- storing the number of the current item
   local startCount = turtle.getItemCount(slot)
   for i = 1, 16 do
     turtle.select(i)
@@ -37,7 +34,7 @@ function itemCollect(slot)
   turtle.select(slot)
   local endCount = turtle.getItemCount(slot)
 
-  -- アイテム数が増えていたら成功
+  -- Success When the number of items has increased
   if startCount >= endCount then
       return false
   end
@@ -224,4 +221,19 @@ function sendRedNetMsg(id,msg)
   rednet.send(id,msg,true)
   rednet.close(modemdir)
   writeMsg("sent message")
+end
+
+-- [[ ////////// ファイル操作関連 ////////// ]]--
+-- 特定のファイルがあればtrueを返す
+function checkFile(filePath)
+  local fileName = fs.getName(filePath)
+  local configDir = fs.getDrive(filePath)
+
+  for i, v in ipairs(fs.list(configDir)) do
+    textutils.tabulate({i, v}) -- ファイルリスト出力
+    if v == fileName then
+      return true , i
+    end
+  end
+  return false , nil
 end
