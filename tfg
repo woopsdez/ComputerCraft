@@ -20,12 +20,12 @@ function errorLog(r,e)
   end
 end
 
---[[ ///////// move items ///////// ]]--
+--[[ ///////// アイテム移動関連 ///////// ]]--
 
--- item corrects from other slot
+-- 他のスロットからアイテムを集めてくる
 function itemCollect(slot)
 
-  -- storing the number of the current item
+  -- 現在のアイテム数をカウント
   local startCount = turtle.getItemCount(slot)
   for i = 1, 16 do
     turtle.select(i)
@@ -34,7 +34,7 @@ function itemCollect(slot)
   turtle.select(slot)
   local endCount = turtle.getItemCount(slot)
 
-  -- Success When the number of items has increased
+  -- それより数が多くなっていればtrueを返す
   if startCount >= endCount then
       return false
   end
