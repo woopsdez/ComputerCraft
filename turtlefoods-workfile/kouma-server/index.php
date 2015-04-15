@@ -1,0 +1,5 @@
+index.php
+
+<?php
+phpinfo()
+?>

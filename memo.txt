@@ -1,0 +1,16 @@
+# readme
+
+* ログファイル名を指定したい
+* ログファイル名日付とかに自動的にしてくれると良い
+* errorMsgの呼び出し例、引数渡してない
+* itemCollect、閾値を設定したい
+* itemDrop、アイテムをすべてドロップするの?
+* placeItem、カウンタを内部に持っておくほうがいいかも
+* autoRefuel、閾値を設定した
+* bootingRefuel、歩くたびに自動補給ができそう
+* getHome、Homeに帰るわけではない
+
+# tfg
+
+* 4: h.write("---- start ---- \n") # should use writhMsg
+* 17:    h = fs.open("/log", "a") # needs local

@@ -188,23 +188,27 @@ function userInputYN(msg,yStr,nStr)
 end
 
 
--- [[ ////////// 周辺機器 ////////// ]]--
+-- 周辺機器をリスト出力する関数
 function listPeripheral()
   for n,v in ipairs (peripheral.getNames()) do
-    number = tostring(n)
-    dir = tostring(v)
-    type = peripheral.getType(v)
+    local number = tostring(n)
+    local dir = tostring(v)
+    local type = peripheral.getType(v)
     textutils.tabulate({number , dir , type})
   end
-  return number , dir , type
 end
 
+-- 引数に渡した周辺機器が接続されているかを確認、その方向を返す関数
 function checkPeripheral(typeStr)
-  number , dir , type = listPeripheral()
-  if not typeStr == type then
-    return false
+  for n,v in ipairs (peripheral.getNames()) do
+    local number = tostring(n)
+    local dir = tostring(v)
+    local type = peripheral.getType(v)
+    if typeStr == type then
+      return true , dir
+    end
   end
-  return true , dir
+  return false , nil
 end
 
 -- [[ ////////// レッドストーン入出力 ////////// ]]--
