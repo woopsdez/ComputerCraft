@@ -26,13 +26,12 @@ $faceImageSrc = $username.".png";
 /*unlink($username.".txt");*/
 
 // アクセス時点でファイルがすでにあるかどうかを判別
-if (file_exists($faceImageSrc)) {
-  // ファイルがなかったら取得
-  fileSave($username,$faceImageSrc);
-} else {
+if (file_exists($faceImageSrc)) {  
   // ファイルがあったら
   // タイムスタンプを見る
   $ts = filemtime($faceImageSrc);
+  if (is_null($ts)){ $ts = 0;}
+  
   $limit = $ts + 120;
   if ($ts <= $limit) {
     // 一定時間すぎていなければ、
@@ -42,75 +41,14 @@ if (file_exists($faceImageSrc)) {
     // 過ぎていたら、ダウンロード
     fileSave($username,$faceImageSrc);
   }
+} else {
+  // ファイルがなかったら取得 
+  fileSave($username,$faceImageSrc);
 }
-
-
-// ----------------------------------------- //
-//              [[[[[画像処理]]]]]            //
-// ----------------------------------------- //
-
-// 画像を拡大
-$cmd_scale = sprintf("/usr/bin/convert -scale 300%% %s %sx3.png", $faceImageSrc,$username);
-
-// 比率を変更
-$cmd_geometry = sprintf("/usr/bin/convert -geometry 24x16! %sx3.png %s-convert.png", $username,$username);
-
-exec($cmd_scale); //コマンド実行
-exec($cmd_geometry); //コマンド実行
 
 // ----------------------------------------- //
 //     [[[[[色情報をテキストデータに変換]]]]]     //
 // ----------------------------------------- //
-
-function RGB_TO_HSV ($R, $G, $B)  // RGB Values:Number 0-255
-{                                 // HSV Results:Number 0-1
-   $HSL = array();
-
-   $var_R = ($R / 255);
-   $var_G = ($G / 255);
-   $var_B = ($B / 255);
-
-   $var_Min = min($var_R, $var_G, $var_B);
-   $var_Max = max($var_R, $var_G, $var_B);
-   $del_Max = $var_Max - $var_Min;
-
-   $V = $var_Max;
-
-   if ($del_Max == 0)
-   {
-      $H = 0;
-      $S = 0;
-   }
-   else
-   {
-      $S = $del_Max / $var_Max;
-
-      $del_R = ( ( ( $var_Max - $var_R ) / 6 ) + ( $del_Max / 2 ) ) / $del_Max;
-      $del_G = ( ( ( $var_Max - $var_G ) / 6 ) + ( $del_Max / 2 ) ) / $del_Max;
-      $del_B = ( ( ( $var_Max - $var_B ) / 6 ) + ( $del_Max / 2 ) ) / $del_Max;
-
-      if      ($var_R == $var_Max) $H = $del_B - $del_G;
-      else if ($var_G == $var_Max) $H = ( 1 / 3 ) + $del_R - $del_B;
-      else if ($var_B == $var_Max) $H = ( 2 / 3 ) + $del_G - $del_R;
-
-      if ($H<0) $H++;
-      if ($H>1) $H--;
-   }
-
-   $HSL['H'] = $H;
-   $HSL['S'] = $S;
-   $HSL['V'] = $V;
-
-   return $HSL;
-}
-
-// 画像サイズを取得
-$sizeArray = getimagesize($username."-convert.png");
-$imageW = $sizeArray[0]; // 幅
-$imageH = $sizeArray[1]; // 高さ
-
-// 画像を読み込み
-$im = imagecreatefrompng($username."-convert.png");
 
 // CCで使える色を配列に格納
 $colors = array(
@@ -151,6 +89,8 @@ $color_name = array(
   "black"
 );
 
+$previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
+
 ?>
 
 <!DOCTYPE html>
@@ -159,6 +99,7 @@ $color_name = array(
   <meta charset="UTF-8">
   <title>Document</title>
   <style>
+    body{background: #000; color: #FFF;}
     .text-center{margin:0 auto; text-align: center;}
     .left{width: 20%; float: left;}
     .right{width: 75%; float:right;}
@@ -179,16 +120,15 @@ $color_name = array(
 <hr>
 
 <div class="left">
-  <img src="
-    <?php echo $username ?>-convert.png" alt="">
-  <!-- <p>カラーパレット</p> -->
+  <img src="<?php echo $previewUrl ?>" >
+  <br>
+  <p>ゲーム内で使える色、一覧</p>
   <?php
     for ($i=0; $i < count($colors) ; $i++) {
-      // HSLに変換
-      $plt_HSL = RGB_TO_HSV($colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
-      printf('<span style="display:inline-block; background: rgba(%d,%d,%d,1); ">%.2f,%.2f,%.2f,</span>',
-              $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"],
-              $plt_HSL["H"], $plt_HSL["S"], $plt_HSL["V"]
+      printf(
+        '<span style="display:inline-block; margin: 3px; padding: 3px; background: rgb(%d,%d,%d); ">%d,%d,%d</span>',
+        $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"],
+        $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]
       );
     }
   ?>
@@ -200,77 +140,149 @@ $output = "";
 //           [[[[[近似色を取得]]]]]            //
 // ----------------------------------------- //
 
-// 色を取得
-for ($y=0; $y < $imageH ; $y++) { 
-  for ($x=0; $x < $imageW ; $x++) { 
-    $color_index = imagecolorat($im, $x, $y);
-    $color_trans = imagecolorsforindex($im, $color_index);
-    $web_HSL = RGB_TO_HSV($color_trans["red"], $color_trans["green"], $color_trans["blue"]);
-    
-    // 最小値の比較用変数
-    $distanceDetect = 999999999;
-    $targetIndex = 0;
+// 画像サイズを取得
+$sizeArray = getimagesize($username.".png");
+$imageW = $sizeArray[0]; // 幅
+$imageH = $sizeArray[1]; // 高さ
 
-    $threshold = 0.1;
-    // CCで使える色に近い色の距離を取得
-    for ($i=0; $i < count($colors); $i++) { 
-      $cc_HSL = RGB_TO_HSV($colors[$i]["r"],$colors[$i]["g"],$colors[$i]["b"]);
+// 画像を読み込み
+$im = imagecreatefrompng($username.".png");
+// trueカラーからパレットカラーへ変更
+imagetruecolortopalette($im, false, 16);
+// 画像を保存
+$result = imagepng($im, $username."-16.png");
+// ここまでで利用していた画像を削除
+imagedestroy($im);
 
-      if ($web_HSL["V"] <= $threshold || (1.0 - $threshold) <= $web_HSL["V"]) {
-        if ((1.0 - $threshold) <= $web_HSL["V"]) {              
-          $distance = ($cc_HSL["S"] - $web_HSL["S"]) * ($cc_HSL["S"] - $web_HSL["S"]) +
-                      ($cc_HSL["H"] - $web_HSL["H"]) * ($cc_HSL["H"] - $web_HSL["H"]);
-        } else if ($web_HSL["S"] <= $threshold) {
-          $distance = ($cc_HSL["S"] - $web_HSL["S"]) * ($cc_HSL["S"] - $web_HSL["S"]) +
-                      ($cc_HSL["V"] - $web_HSL["V"]) * ($cc_HSL["V"] - $web_HSL["V"]);
-        } else {
-          $distance = ($cc_HSL["V"] - $web_HSL["V"]) * ($cc_HSL["V"] - $web_HSL["V"]);
-        }
-      } else {
-        if ($cc_HSL["S"] <= 0.01) {
-          $distance = 999999999;
-        } else {
-          // 色相環の距離計算
-          $hue = abs($cc_HSL["H"] - $web_HSL["H"]);
-          if (0.5 < $hue) { $hue = 1 - $hue; } 
-          $distance = ($hue * $hue);// +
-                      //0.1 * ($cc_HSL["S"] - $web_HSL["S"]) * ($cc_HSL["S"] - $web_HSL["S"]);// +                    
-                      //($cc_HSL["V"] - $web_HSL["V"]) * ($cc_HSL["V"] - $web_HSL["V"]);          
-        }
-      }
+// 新たに作成した画像を読み込み
+$im = imagecreatefrompng($username."-16.png");
+echo '<br><img src="'.$username.'-16.png">';
 
-      // 16色の中で、一番近い距離を取得
-      if ($distanceDetect > $distance) {
-        $distanceDetect = $distance;
-        $targetIndex = $i;
-      }
-    }
+// 画像の色数を調べる
+$cl_total = imagecolorstotal($im);
 
-    // 確認用表示
-    printf(
-      '<span style="display:inline-block;width:1.5%%; background: rgba(%d,%d,%d,1); "> %x </span>',
-      $colors[$targetIndex]["r"],
-      $colors[$targetIndex]["g"],
-      $colors[$targetIndex]["b"],
-      $targetIndex
-      // $color_trans["red"],
-      // $color_trans["green"],
-      // $color_trans["blue"]
-    );
+// 色数のリストを取得
+$color_list = array();
 
-    // CC用に16進数に変換
-    $text = sprintf("%x", $targetIndex);
+echo '<div style="padding: 10px; background:#efefef; color: #000;">';
+echo '<p>カラーパレット</p>';
 
-    // ファイル書き込み
-    $output .= $text;
-  }
-  $output .= "\n";
-
-  echo "<br>";
+for ($i=0; $i < $cl_total ; $i++) { 
+  // パレットで使われている色を配列に格納する
+  $color_list[] = imagecolorsforindex($im, $i);
+  printf(
+    '<span style="color:rgb(%d,%d,%d);">■</span>',
+    $color_list[$i]["red"],
+    $color_list[$i]["green"],
+    $color_list[$i]["blue"]
+  );
 }
-  file_put_contents($username.".txt", $output);
+echo '</div>';
+
+echo '<div class="left">';
+echo '<p>CCの色と近い色を表示</p>';
+
+// 使用しているカラーパレット1つずつ、一番近いCCの色を探す
+for ($i=0; $i < count($cl_total) ; $i++) { 
+
+  // 指定した色と、CCの16色とつきあわせる
+  for ($i=0; $i < count($colors) ; $i++) {
+    $nearest_color = imagecolorclosest($im, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
+    print_r($nearest_color);
+    // 近い色を表示
+    $to_rgb = imagecolorsforindex ($im, $nearest_color);
+    printf(
+      '<span style="color:rgb(%d,%d,%d);">■</span>',
+      $to_rgb["red"],
+      $to_rgb["green"],
+      $to_rgb["blue"]
+    );
+    echo " > ";
+  }
+
+  // カラーパレットから1色とりだす
+  // CC色でその色に一番近いのを探す
+    // 比較をする
+  // $hogehogeっていう変数に、取得した近い色を入れていく
+  // で、毎回$hogehogeっていうのと、新しく取得した色、どっちが近いかを判定しないといけない
+  
+  $nR = $nearest_color["red"];
+  $nG = $nearest_color["green"];
+  $nB = $nearest_color["blue"];
+
+  $cR = $colors[$i]["r"];
+  $cG = $colors[$i]["g"];
+  $cB = $colors[$i]["b"];
+
+  $distance = ($cR-$nR)*($cR-$nR)+($cG-$nG)*($cG-$nG)+($cB-$nB)*($cB-$nB);
+
+  $distanceDetect = 999999;
+  if ($distanceDetect > $distance) {
+    $distanceDetect = $distance;
+    $targetIndex = $i;
+  }
+}
+
+// CCの色に変更
+imagecolorset($im, $nearest_color, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
+$to_rgb = imagecolorsforindex ($im, $nearest_color);
+printf(
+  '<span style="color:rgb(%d,%d,%d);">■</span>',
+  $to_rgb["red"],
+  $to_rgb["green"],
+  $to_rgb["blue"]
+);
+print_r($color_name[$i]."<br>"); 
 
 ?>
+
+</div>
+<div class="left">
+  <p>CC表示用</p>
+<?php
+// 色を取得
+for ($y=0; $y < $imageH ; $y++) { 
+  for ($x=0; $x < $imageW ; $x++) {
+    // 画像の色を取得
+    $png_color = imagecolorat($im, $x, $y);
+    $to_rgb = imagecolorsforindex($im, $png_color);
+    printf(
+      '<span style="color:rgb(%d,%d,%d);">%d</span>',
+      $to_rgb["red"],
+      $to_rgb["green"],
+      $to_rgb["blue"],
+      sprintf("%x", $png_color)
+    );
+  }
+  echo "<br>";
+}
+?>
+</div>
+
+<p>モニターで表示したときの見た目</p>
+<?php
+// 色を取得
+for ($y=0; $y < $imageH ; $y++) { 
+  for ($x=0; $x < $imageW ; $x++) {
+    // 画像の色を取得
+    $png_color = imagecolorat($im, $x, $y);
+  
+    $to_rgb = imagecolorsforindex($im, $png_color);
+    printf(
+      '<div style="display:inline-block;width:20px;background:rgb(%d,%d,%d);">&nbsp;</div>',
+      $to_rgb["red"],
+      $to_rgb["green"],
+      $to_rgb["blue"],
+      $png_color
+    );
+  }
+  echo "<br>";
+}
+
+// 読み込んだ画像を削除
+imagedestroy($im);
+?>
+
 </div>
 </body>
 </html>

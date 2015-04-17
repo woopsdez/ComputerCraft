@@ -26,7 +26,7 @@ fs.delete("data/*")
 monitor = peripheral.wrap("right")
 sensor = peripheral.wrap("top")
 
-monitor.clear()
+-- monitor.clear()
 
 -- [/////// 関数 ///////] --
 
@@ -63,11 +63,7 @@ while true do
   name = sensor.getPlayers()
   for k, v in pairs(name) do
     player = v
-    if pastPlayer ~= player.name or pastPlayer ~= nil then
-      print("My Name is "..player.name.."!")
-    end
   end
-  pastPlayer = player.name
 
   -- ファイルを初期化するために消去
   fs.delete(player.name..".txt")
@@ -88,7 +84,7 @@ while true do
       print("Server didn't respond.")
       break
     else
-      print("sonota")
+      -- print("sonota")
     end
   end
 
@@ -99,13 +95,17 @@ while true do
 
   -- モニターをクリア
   monitor.setCursorPos(1, 1)
-  monitor.clear()
+  -- monitor.clear()
+  monitor.setTextScale(4.5)
 
   -- 画像表示ファイルを読み込み
   local image = paintutils.loadImage("data/"..player.name)
   term.redirect(monitor)
   paintutils.drawImage(image, 1, 1)
+  sleep(3)
   x,y = term.getCursorPos()
   term.setCursorPos(1, y+1)
+  -- monitor.setTextScale(1)
+  write(player.name)
   term.setCursorBlink(true)
 end
