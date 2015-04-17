@@ -1,5 +1,0 @@
-index.php
-
-<?php
-phpinfo()
-?>

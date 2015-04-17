@@ -1,0 +1,126 @@
+-- [/////// 概    要 ///////] --
+
+-- # おみくじプログラム
+
+-- # マイクラ内で必要なもの
+-- コンピューター or タートル
+-- アドバンスドモニター ??個
+
+-- # 動作順序
+-- 1. プログラムが起動  /clear!
+-- 2. プレイヤーの顔が表示される  /clear!
+-- 3. レッドストーン入力 or マウスタッチ入力でおみくじが開始  /clear!
+-- 4. プレイヤーの顔と吉と凶がぐるぐる表示される /clear!
+-- 5. 吉か凶がランダムで表示される /clear!
+-- 6. 吉と凶でブロックやアイテム、タートルが動作する
+--    吉 > タートルがでてきてアイテムがぽこぽこと投げられる
+--    凶 > drawbrigeで床が消えて下に落ちる、蜘蛛の巣&パンクステージ&ホッパーでアイテム回収、外のチェストに収納
+-- ------------------------- --
+
+function getFile(filename)
+  local file = http.get("http://woopsdez.jp/computercraft/kouma-server/omikuji/"..filename..".txt").readAll()
+  if file ~= nil then
+    f = fs.open("data/"..filename, "w")
+    f.write(file)
+    f.close()
+  else
+    print("Server didn't respond.")
+  end
+end
+
+getFile("hyoushi")
+getFile("kichi")
+getFile("kyou")
+
+local baseDir = "data/"
+local kichi = "kichi"
+local kyou = "kyou"
+
+-- 定数imageから10進数に変更
+function lookupColor(index)
+  return bit.blshift(1, index) 
+end
+
+-- [/////// 表示画像の読み込み ///////] --
+function showImage(baseDir,filename)
+  term.clear()
+  local image = paintutils.loadImage(baseDir..filename)
+  paintutils.drawImage(image, 1, 1)
+end
+
+-- function showImageSlow(baseDir,filename)
+--   -- 初期化
+--   local x = 1
+--   local y = 1
+
+--   -- ファイルを開く
+--   local f = fs.open(baseDir..filename, "rb")
+--   if f == nil then
+--     print("no such file")
+--   else
+--     while true do
+--       -- ファイルを読む
+--       local text = f.read()
+--       -- ファイルが最後まで読めたら終了
+--       if text == nil then
+--         break
+--       elseif text == 10 then
+--         -- 改行のとき
+--         x = 1
+--         y = y + 1
+--       else
+--         -- 読み込んだ1バイトを文字に変換
+--         text = string.char(text)
+--         -- 文字を文字列に変換
+--         local str = tostring(text)
+--         -- 文字列を整数に変換
+--         local index = tonumber(str)
+--         -- 整数をカラー定数に変換
+--         local color = lookupColor(index)
+--         paintutils.drawPixel(x, y, color)
+--         x = x + 1
+--       end
+--     end
+--   end
+-- end
+
+-- [/////// モニターへの接続、表示の切り替え ///////] --
+monitor = peripheral.wrap("right")
+monitor.clear()
+monitor.setTextScale(2)
+term.redirect(monitor)
+
+while true do
+  -- スタート画面
+  showImage(baseDir,"hyoushi")
+  term.setBackgroundColor(32768)
+  write("right-click on monitor, to strat!")
+
+  -- モニターにクリックされるまで待つ
+  os.pullEvent("monitor_touch")
+
+  -- ぐるぐる表示
+  os.startTimer(0.2)
+  while true do
+    event = os.pullEvent()
+    if event == "monitor_touch" then
+      break
+    end
+    -- 表示する画像を配列に格納
+    local fileList = fs.list("data/")
+    i = math.random(table.maxn(fileList))
+    showImage(baseDir,fileList[i])
+    os.startTimer(0.2)
+  end
+
+  -- [/////// 吉と凶の判定 ///////] --
+  local kuji = math.random(100)
+  if kuji >= 50 then
+    showImage(baseDir,"kichi")
+  else
+    showImage(baseDir,"kyou")
+  end
+  term.setBackgroundColor(32768)
+  write("right-click on monitor, to restrat!")
+  os.pullEvent("monitor_touch")
+end

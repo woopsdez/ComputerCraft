@@ -1,0 +1,33 @@
+function getFaceAll(username)
+  local baseURL = "http://woopsdez.jp/computercraft/kouma-server/"
+  local getFaceURL = baseURL.."face-change.php?name="..username
+  local getTextURL = baseURL..username..".txt"
+
+  -- サーバーから情報を取得
+  http.request(getFaceURL)
+  while true do
+    local event, sourceUrl, file = os.pullEvent()
+    if event == "http_success" then
+      print(url)
+      break
+    elseif event == "http_failure" then
+      print("Server didn't respond.")
+      break
+    else
+      print("sonota")
+    end
+  end
+
+  local faceFile = http.get(getTextURL).readAll()
+  local f = fs.open("data/"..username, "w")
+  f.write(faceFile)
+  f.close()
+end
+
+getFaceAll("awa112")
+getFaceAll("harmeln0710")
+getFaceAll("hyodo_P")
+getFaceAll("LightningLeft")
+getFaceAll("migy")
+getFaceAll("Potato0314")
+getFaceAll("sigekix")
