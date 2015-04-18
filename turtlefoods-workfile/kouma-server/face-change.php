@@ -23,7 +23,6 @@ $username = $_GET['name'];
 $faceImageSrc = $username.".png";
 
 // CC表示用ファイルを初期化
-/*unlink($username.".txt");*/
 
 // アクセス時点でファイルがすでにあるかどうかを判別
 if (file_exists($faceImageSrc)) {  
@@ -103,15 +102,13 @@ $previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
     .text-center{margin:0 auto; text-align: center;}
     .left{width: 20%; float: left;}
     .right{width: 75%; float:right;}
-   .hoge{
-     display: inline-block;
-     width: 1px;
-     height: 1px;
-     overflow: hidden;
-   }
-   span{
-     padding: 1px;
-   }
+    .hoge{
+      display: inline-block;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+    }
+    span{padding: 1px;}
   </style>
 </head>
 <body>
@@ -224,7 +221,7 @@ for ($i=0; $i < count($cl_total) ; $i++) {
 }
 
 // CCの色に変更
-imagecolorset($im, $nearest_color, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
+imagecolorset($im, $cl_total[$targetIndex], $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
 $to_rgb = imagecolorsforindex ($im, $nearest_color);
 printf(
   '<span style="color:rgb(%d,%d,%d);">■</span>',
@@ -235,7 +232,6 @@ printf(
 print_r($color_name[$i]."<br>"); 
 
 ?>
-
 </div>
 <div class="left">
   <p>CC表示用</p>
@@ -282,7 +278,6 @@ for ($y=0; $y < $imageH ; $y++) {
 // 読み込んだ画像を削除
 imagedestroy($im);
 ?>
-
-</div>
+  </div>
 </body>
 </html>
