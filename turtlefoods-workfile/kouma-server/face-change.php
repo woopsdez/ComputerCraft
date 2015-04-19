@@ -1,15 +1,21 @@
 <?php
 
+// ----------------------------------------- //
+// 画像をサーバーから取得する
+// ----------------------------------------- //
+
 function fileSave($username,$faceImageSrc){
   // 画像をサーバー上から取得して保存
   $options = array(
     "http" => array(
       "method" => "GET",
-      "header" => "User-Agent: Minecraft",
+      "header" => "User-Agent: MinecraftA",
     ),
   );
   $context = stream_context_create($options);
   $url = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=8";
+
+  print_r($url);
 
   // ファイルを取得
   $file = file_get_contents($url, false, $context);
@@ -21,16 +27,18 @@ function fileSave($username,$faceImageSrc){
 // CC端末から情報を受けとる
 $username = $_GET['name'];
 $faceImageSrc = $username.".png";
+$previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
 
-// CC表示用ファイルを初期化
+// ----------------------------------------- //
+// 画像をキャッシュ
+// ----------------------------------------- //
 
 // アクセス時点でファイルがすでにあるかどうかを判別
 if (file_exists($faceImageSrc)) {  
   // ファイルがあったら
   // タイムスタンプを見る
   $ts = filemtime($faceImageSrc);
-  if (is_null($ts)){ $ts = 0;}
-  
+  if (is_null($ts)){$ts = 0;}  
   $limit = $ts + 120;
   if ($ts <= $limit) {
     // 一定時間すぎていなければ、
@@ -38,12 +46,21 @@ if (file_exists($faceImageSrc)) {
     $faceImageSrc;
   } else {
     // 過ぎていたら、ダウンロード
-    fileSave($username,$faceImageSrc);
+    fileSave($username, $faceImageSrc);
+    // CC表示用ファイルを初期化
+    unlink($username.".txt");
   }
 } else {
   // ファイルがなかったら取得 
-  fileSave($username,$faceImageSrc);
+  fileSave($username, $faceImageSrc);
 }
+
+// ----------------------------------------- //
+// 画像データをCCで正方形に見えるように調整
+// ----------------------------------------- //
+
+$cmd_upscale = sprintf("convert %s.png -sample 300%%x200%% %s-convert.png", $username,$username);
+exec($cmd_upscale);
 
 // ----------------------------------------- //
 //     [[[[[色情報をテキストデータに変換]]]]]     //
@@ -87,26 +104,23 @@ $color_name = array(
   "red",
   "black"
 );
-
-$previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
-
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <title>Document</title>
   <style>
     body{background: #000; color: #FFF;}
     .text-center{margin:0 auto; text-align: center;}
-    .left{width: 20%; float: left;}
+    .left{float: left;}
     .right{width: 75%; float:right;}
     .hoge{
       display: inline-block;
-      width: 1px;
-      height: 1px;
-      overflow: hidden;
+      width: 10px;
+      height: 23px;
+      margin: 0 auto;
     }
     span{padding: 1px;}
   </style>
@@ -116,7 +130,7 @@ $previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
 <h1 class="text-center">この画像の色を解析するよ！</h1>
 <hr>
 
-<div class="left">
+<div class="left" style="width: 20%;">
   <img src="<?php echo $previewUrl ?>" >
   <br>
   <p>ゲーム内で使える色、一覧</p>
@@ -129,8 +143,10 @@ $previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
       );
     }
   ?>
+
 </div>
 <div class="right">
+
 <?php
 $output = "";
 // ----------------------------------------- //
@@ -138,12 +154,12 @@ $output = "";
 // ----------------------------------------- //
 
 // 画像サイズを取得
-$sizeArray = getimagesize($username.".png");
+$sizeArray = getimagesize($username."-convert.png");
 $imageW = $sizeArray[0]; // 幅
 $imageH = $sizeArray[1]; // 高さ
 
 // 画像を読み込み
-$im = imagecreatefrompng($username.".png");
+$im = imagecreatefrompng($username."-convert.png");
 // trueカラーからパレットカラーへ変更
 imagetruecolortopalette($im, false, 16);
 // 画像を保存
@@ -153,17 +169,13 @@ imagedestroy($im);
 
 // 新たに作成した画像を読み込み
 $im = imagecreatefrompng($username."-16.png");
-echo '<br><img src="'.$username.'-16.png">';
-
 // 画像の色数を調べる
 $cl_total = imagecolorstotal($im);
+echo '<div style="padding: 10px; background:#efefef; color: #000;">';
+echo '<p>このアイコンで使わている色一覧</p>';
 
 // 色数のリストを取得
 $color_list = array();
-
-echo '<div style="padding: 10px; background:#efefef; color: #000;">';
-echo '<p>カラーパレット</p>';
-
 for ($i=0; $i < $cl_total ; $i++) { 
   // パレットで使われている色を配列に格納する
   $color_list[] = imagecolorsforindex($im, $i);
@@ -176,108 +188,122 @@ for ($i=0; $i < $cl_total ; $i++) {
 }
 echo '</div>';
 
-echo '<div class="left">';
-echo '<p>CCの色と近い色を表示</p>';
+// echo '<div class="left">';
+// echo '<p>CCの色と近い色を表示</p>';
 
 // 使用しているカラーパレット1つずつ、一番近いCCの色を探す
-for ($i=0; $i < count($cl_total) ; $i++) { 
+$cl_table = array();
+for ($i=0; $i < count($cl_total) ; $i++) {
+  for ($j=0; $j < count($colors); $j++) { 
+    
+    // 近い色を探す
+    $nearest_color = imagecolorclosest($im, $colors[$j]["r"], $colors[$j]["g"], $colors[$j]["b"]);
 
-  // 指定した色と、CCの16色とつきあわせる
-  for ($i=0; $i < count($colors) ; $i++) {
-    $nearest_color = imagecolorclosest($im, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
-    print_r($nearest_color);
     // 近い色を表示
-    $to_rgb = imagecolorsforindex ($im, $nearest_color);
-    printf(
-      '<span style="color:rgb(%d,%d,%d);">■</span>',
-      $to_rgb["red"],
-      $to_rgb["green"],
-      $to_rgb["blue"]
-    );
-    echo " > ";
-  }
-
-  // カラーパレットから1色とりだす
-  // CC色でその色に一番近いのを探す
-    // 比較をする
-  // $hogehogeっていう変数に、取得した近い色を入れていく
-  // で、毎回$hogehogeっていうのと、新しく取得した色、どっちが近いかを判定しないといけない
-  
-  $nR = $nearest_color["red"];
-  $nG = $nearest_color["green"];
-  $nB = $nearest_color["blue"];
-
-  $cR = $colors[$i]["r"];
-  $cG = $colors[$i]["g"];
-  $cB = $colors[$i]["b"];
-
-  $distance = ($cR-$nR)*($cR-$nR)+($cG-$nG)*($cG-$nG)+($cB-$nB)*($cB-$nB);
-
-  $distanceDetect = 999999;
-  if ($distanceDetect > $distance) {
-    $distanceDetect = $distance;
-    $targetIndex = $i;
+    // print_r($nearest_color);
+    // $ic_rgb = imagecolorsforindex ($im, $nearest_color);
+    // printf(
+    //   '<span style="color:rgb(%d,%d,%d);">■</span>
+    //    >
+    //    <span style="color:rgb(%d,%d,%d);">■ %s</span>
+    //    <br>',
+    //   $ic_rgb["red"],
+    //   $ic_rgb["green"],
+    //   $ic_rgb["blue"],
+    //   $colors[$j]["r"],
+    //   $colors[$j]["g"],
+    //   $colors[$j]["b"],
+    //   $color_name[$j]
+    // );
   }
 }
 
-// CCの色に変更
-imagecolorset($im, $cl_total[$targetIndex], $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
-$to_rgb = imagecolorsforindex ($im, $nearest_color);
-printf(
-  '<span style="color:rgb(%d,%d,%d);">■</span>',
-  $to_rgb["red"],
-  $to_rgb["green"],
-  $to_rgb["blue"]
-);
-print_r($color_name[$i]."<br>"); 
-
 ?>
-</div>
-<div class="left">
-  <p>CC表示用</p>
+
+<!-- </div> -->
+<div class="left" style="width: 30%;">
+<p>CC表示用に変換</p>
+
 <?php
-// 色を取得
+
+// CCパレットをもった画像を作成
+$cc = imagecreate(16, 16);
+$x = 1;
+$cc_pallet = array();
+for ($i=0; $i < count($colors) ; $i++) { 
+  // カラーパレットを設定
+  imagecolorset($cc, $i, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
+  // 使用する色を設定
+  $color = imagecolorallocate($cc, $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]);
+  imagefill($cc, $i, 1, $color);  
+}
+
+// アイコン画像のサイズで二重ループをかける
 for ($y=0; $y < $imageH ; $y++) { 
-  for ($x=0; $x < $imageW ; $x++) {
-    // 画像の色を取得
-    $png_color = imagecolorat($im, $x, $y);
-    $to_rgb = imagecolorsforindex($im, $png_color);
-    printf(
-      '<span style="color:rgb(%d,%d,%d);">%d</span>',
-      $to_rgb["red"],
-      $to_rgb["green"],
-      $to_rgb["blue"],
-      sprintf("%x", $png_color)
+  for ($x=0; $x < $imageW ; $x++) { 
+    // 横のときの処理
+    // 左上から順番に色情報を取得する
+    $icon_color = imagecolorat($im, $x, $y);
+    $icon_rgb = imagecolorsforindex($im, $icon_color);
+    // $ccのパレットと比較して一番近い色を取得
+
+    $cc_index = imagecolorclosest($cc, $icon_rgb["red"], $icon_rgb["green"], $icon_rgb["blue"]);
+    $cc_rgb = imagecolorsforindex($cc, $cc_index);
+
+    // その色で背景を描写する
+    printf('<span class="hoge" style="background-color:rgb(%d,%d,%d);">&nbsp;</span>',
+      $cc_rgb["red"],
+      $cc_rgb["green"],
+      $cc_rgb["blue"],
+      $cc_index
     );
   }
+  // 縦のときの処理
   echo "<br>";
 }
 ?>
+
 </div>
 
-<p>モニターで表示したときの見た目</p>
+<div>
+  <p>CC表示用テキスト</p>
 <?php
-// 色を取得
+// アイコン画像のサイズで二重ループをかける
 for ($y=0; $y < $imageH ; $y++) { 
-  for ($x=0; $x < $imageW ; $x++) {
-    // 画像の色を取得
-    $png_color = imagecolorat($im, $x, $y);
-  
-    $to_rgb = imagecolorsforindex($im, $png_color);
-    printf(
-      '<div style="display:inline-block;width:20px;background:rgb(%d,%d,%d);">&nbsp;</div>',
-      $to_rgb["red"],
-      $to_rgb["green"],
-      $to_rgb["blue"],
-      $png_color
+  for ($x=0; $x < $imageW ; $x++) { 
+    // 横のときの処理
+    // 左上から順番に色情報を取得する
+    $icon_color = imagecolorat($im, $x, $y);
+    $icon_rgb = imagecolorsforindex($im, $icon_color);
+    // $ccのパレットと比較して一番近い色を取得
+
+    $cc_index = imagecolorclosest($cc, $icon_rgb["red"], $icon_rgb["green"], $icon_rgb["blue"]);
+    $cc_rgb = imagecolorsforindex($cc, $cc_index);
+
+    // その色で背景を描写する
+    printf('<span class="hoge" style="background-color:rgb(%d,%d,%d);">%x</span>',
+      $cc_rgb["red"],
+      $cc_rgb["green"],
+      $cc_rgb["blue"],
+      $cc_index
     );
+
+    $output .= sprintf("%x", $cc_index);
   }
+  // 縦のときの処理
   echo "<br>";
+  // CC上で1px足りないため、ここで継ぎ足し
+  $output .= sprintf("%x", $cc_index)."\n";
 }
+
+file_put_contents($username.".txt", $output);
 
 // 読み込んだ画像を削除
 imagedestroy($im);
+imagedestroy($cc);
+unlink($username."-16.png");
+unlink($username."-convert.png");
 ?>
-  </div>
+
 </body>
 </html>

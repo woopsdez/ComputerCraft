@@ -93,19 +93,19 @@ while true do
   f.write(faceFile)
   f.close()
 
+
   -- モニターをクリア
   monitor.setCursorPos(1, 1)
-  -- monitor.clear()
-  monitor.setTextScale(4.5)
+  monitor.clear()
+  monitor.setTextScale(2)
 
   -- 画像表示ファイルを読み込み
   local image = paintutils.loadImage("data/"..player.name)
   term.redirect(monitor)
   paintutils.drawImage(image, 1, 1)
-  sleep(3)
+  -- sleep(3)
   x,y = term.getCursorPos()
   term.setCursorPos(1, y+1)
-  -- monitor.setTextScale(1)
   write(player.name)
   term.setCursorBlink(true)
 end
