@@ -9,13 +9,11 @@ function fileSave($username,$faceImageSrc){
   $options = array(
     "http" => array(
       "method" => "GET",
-      "header" => "User-Agent: MinecraftA",
+      "header" => "User-Agent: Minecraft",
     ),
   );
   $context = stream_context_create($options);
   $url = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=8";
-
-  print_r($url);
 
   // ファイルを取得
   $file = file_get_contents($url, false, $context);
@@ -27,11 +25,37 @@ function fileSave($username,$faceImageSrc){
 // CC端末から情報を受けとる
 $username = $_GET['name'];
 $faceImageSrc = $username.".png";
-$previewUrl = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=400";
 
 // ----------------------------------------- //
-// 画像をキャッシュ
+// 画像キャッシュ
 // ----------------------------------------- //
+
+// 下記ユーザーは最適化したものがあるのでそちらを使う
+$user_opt = array(
+  "198215knock",
+  "Aguillette",
+  "awa112",
+  "Ganeesha",
+  "hori2015",
+  "HYODO_P",
+  "kuroshio9314",
+  "lucinda_u",
+  "master_cheap",
+  "migy",
+  "Potato0314",
+  "Q61",
+  "seven5588",
+  "shigekix",
+  "gengenetrix"
+);
+
+// 上記ユーザーのリストがusernameに入っているかを確認
+foreach ($user_opt as $key => $value) {
+  if ($username === $value) {
+    // もしユーザーネームが上記のものと一致したら
+    $username = $username."-opti";
+  }
+}
 
 // アクセス時点でファイルがすでにあるかどうかを判別
 if (file_exists($faceImageSrc)) {  
@@ -59,6 +83,13 @@ if (file_exists($faceImageSrc)) {
 // 画像データをCCで正方形に見えるように調整
 // ----------------------------------------- //
 
+$previewUrl = $username;
+
+// web表示用
+$cmd_preview = sprintf("convert %s.png -sample 3600%% %s-view.png", $username,$username);
+exec($cmd_preview);
+
+// CC表示調整用
 $cmd_upscale = sprintf("convert %s.png -sample 300%%x200%% %s-convert.png", $username,$username);
 exec($cmd_upscale);
 
@@ -131,7 +162,7 @@ $color_name = array(
 <hr>
 
 <div class="left" style="width: 20%;">
-  <img src="<?php echo $previewUrl ?>" >
+  <img src="<?php echo $previewUrl ?>-view.png" >
   <br>
   <p>ゲーム内で使える色、一覧</p>
   <?php
@@ -296,7 +327,12 @@ for ($y=0; $y < $imageH ; $y++) {
   $output .= sprintf("%x", $cc_index)."\n";
 }
 
-file_put_contents($username.".txt", $output);
+// ユーザー名にoptが入ってるか確認
+$opt = strstr($username, "-opt");
+// その内容を削除
+$final_username = str_replace($opt, "", $username);
+
+file_put_contents($final_username.".txt", $output);
 
 // 読み込んだ画像を削除
 imagedestroy($im);

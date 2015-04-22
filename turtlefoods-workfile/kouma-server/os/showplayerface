@@ -1,0 +1,109 @@
+-- [/////// 概    要 ///////] --
+
+-- # モニターで絵を表示させるシステム
+
+-- # マイクラ内で必要なもの
+-- コンピューター or タートル
+-- アドバンスドモニター 25個
+
+-- # 動作順序
+-- 1. プログラムが起動
+-- 2. 一番近くに立っている人を取得 /TODO
+-- 3. プレイヤーネーム取得 /clear!
+-- 4. Minecraft skin viewerからスキン情報を取得 /clear!
+-- 5. 色を16色に変換 /clear?
+-- 6. 色情報をテキストに変換 /clear!
+-- 7. テキストをAPIに通す /clear!
+-- 8. モニターに表示させる /clear!
+
+-- # できたらいいなというもの
+-- 1. GUIでおみくじと、顔表示を切り替え
+-- 2. painterで自分の顔を書いて変更できる
+-- 3. ユーザーごとに自動取得 or 最適化画像にするかを切り替える
+-- ------------------------- --
+
+-- [/////// 周辺機器を取得 ///////] --
+monitor = peripheral.wrap("right")
+sensor = peripheral.wrap("top")
+
+-- monitor.clear()
+
+-- [/////// 関数 ///////] --
+
+-- [/////// コード書くときに便利なもの ///////] --
+-- dump
+function dump(t, level)
+  level = level or 0
+  for i,v in pairs(t) do
+    io.write(string.rep('  ', level))
+    io.write(i..': ')
+    if type(v) == 'table' then
+      print ''
+      dump(v, level + 1)
+    else
+      print(tostring(v))
+    end
+  end
+end
+
+-- メソッド出力
+function methods(dirStr)
+  for i,v in ipairs(peripheral.getMethods(dirStr)) do
+    print(i .. ". " .. v)
+  end
+end
+
+-- [/////// 処理に必要なもの ///////] --
+
+-- [/////// 実行部分 ///////] --
+
+-- プレイヤーネーム取得
+while true do
+  sleep()
+  name = sensor.getPlayers()
+  for k, v in pairs(name) do
+    player = v
+  end
+
+  -- ファイルを初期化するために消去
+  fs.delete(player.name)
+
+  -- URL設定
+  local baseURL = "http://woopsdez.jp/computercraft/kouma-server/"
+  local getFaceURL = baseURL.."face-change.php?name="..player.name
+  local getTextURL = baseURL..player.name..".txt"
+
+  -- サーバーから情報を取得
+  http.request(getFaceURL)
+  while true do
+    local event, sourceUrl, file = os.pullEvent()
+    if event == "http_success" then
+      print(url)
+      break
+    elseif event == "http_failure" then
+      print("Server didn't respond.")
+      break
+    else
+      -- print("sonota")
+    end
+  end
+
+  local faceFile = http.get(getTextURL).readAll()
+  local f = fs.open("data/"..player.name, "w")
+  f.write(faceFile)
+  f.close()
+
+  -- モニターをクリア
+  monitor.setCursorPos(1, 1)
+  monitor.clear()
+  monitor.setTextScale(2)
+
+  -- 画像表示ファイルを読み込み
+  local image = paintutils.loadImage("data/"..player.name)
+  term.redirect(monitor)
+  paintutils.drawImage(image, 1, 1)
+  x,y = term.getCursorPos()
+  term.setCursorPos(1, y+1)
+  write(player.name)
+  term.setCursorBlink(true)
+end

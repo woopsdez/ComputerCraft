@@ -1,0 +1,311 @@
+    ---------------------------
+    -- 変数定義
+    ---------------------------
+    version = 1.0
+    running = true
+
+    -- images
+    _dtFile = "os/backgrounds/dt"
+    _sfFile = "os/backgrounds/showface-computer"
+    _omFile = "os/backgrounds/omikuji-computer"
+
+    -- load images
+    _dt = paintutils.loadImage("os/backgrounds/dt");
+    _sf = paintutils.loadImage("os/backgrounds/showface-computer");
+    _om = paintutils.loadImage("os/backgrounds/omikuji-computer");
+
+    -- ステート
+    _ms = 0
+    _tab = 0
+    _st = 0
+
+     -- ストップボタンをセンター表示
+    local x,y = term.getSize()
+    local stopStr = "    [STOP > Ctrl+R]    "
+    local padding = "                       "
+    local stopStrlen = x + string.len(stopStr)
+    local stopBtnX = math.ceil(stopStrlen/5)
+    local stopBtnY = (y/2)+2
+    local stopBtnXEnd = stopBtnX + stopStrlen
+    local stopBtnYEnd = stopBtnY + 3
+
+     -- ファイル名入力画面をセンター表示
+    local saveFileStr = "        Input FineName         "
+    local savePadding = "                               "
+    local saveFileStrlen = string.len(saveFileStr)
+    local saveFileWindowX = (saveFileStrlen/2) - 4
+    local saveFileWindowY = 5
+    local saveFileWindowXEnd = saveFileWindowX + saveFileStrlen
+    local saveFileWindowYEnd = saveFileWindowY + 3
+
+    ---------------------------
+    -- 関数定義
+    ---------------------------
+
+    -- 画面をクリアにして背景色を指定
+    function clear()
+      term.setBackgroundColor(colors.black)
+      term.clear()
+      term.setCursorPos(1, 1)
+    end
+
+    function drawMenu1()
+      term.setCursorPos(1, 2)
+      term.setBackgroundColor(colors.white)
+      term.setTextColor(colors.red)
+      print("[POWER]")
+      term.setCursorPos(1, 3)
+      term.setBackgroundColor(colors.white)
+      term.setTextColor(colors.red)
+      print("[REBOOT]")
+    end
+
+    function drawTaskBar()
+      term.setCursorPos(1, 1)
+      term.setBackgroundColor(colors.black)
+      term.clearLine()
+      term.setCursorPos(1, 1)
+      term.setBackgroundColor(colors.black)
+      term.setTextColor(colors.red)
+      term.write("[MENU] ")
+      term.setCursorPos(8, 1)
+      term.write("[OMIKUJI] ")
+      term.setCursorPos(18, 1)
+      term.write("[SHOWFACE] ")
+      term.setCursorPos(29, 1)
+      term.write("[PAINTER] ")
+      term.setCursorPos(39, 1)
+      term.write("[OS UPDATE]")
+    end
+
+    function redraw()
+      drawDeskTop()
+      drawTaskBar()
+    end
+
+    function rightClickMenu(x,y)
+      term.setBackgroundColor(colors.white)
+      term.setTextColor(colors.red)
+      term.setCursorPos(x, y)
+      term.write("   [LUA]   ")
+      term.setCursorPos(x, (y+1))
+      term.write("   [IDE]   ")
+      -- 項目を選択したとき
+      local event, button, xPos, yPos = os.pullEvent("mouse_click")
+      while true do
+        if button == 1 and yPos == y and xPos <= (x+7) and xPos >= x then
+          running = false
+          clear()
+          term.setTextColor(colors.red)
+          print("Gone into Command Pronmpt..")
+          print("OS will shutdown after exitting of Lua PRONGPUT")
+          print("Any function of the OS is in the LUA functions now.")
+          shell.run("lua")
+          break
+        else
+          -- それ以外をクリックしたときの処理
+          redraw()
+          break
+        end
+      end
+      _rcm = 0
+    end
+
+    function drawDeskTop()
+      term.setBackgroundColor(colors.pink)
+      term.clear()
+      term.setCursorPos(1, 1)
+      if fs.exists("os/backgrounds/dt") then
+        paintutils.drawImage(_dt, 1, 1)
+      end
+    end
+
+    -- ストップボタンを表示
+    function drawStopButton(x,y)
+      _st = 1
+
+      term.setBackgroundColor(colors.cyan)
+      term.clear()
+      if fs.exists(_sfFile) then
+        paintutils.drawImage(_sf, 1, 1)
+      end
+
+      term.setCursorPos(8, stopBtnY-2)
+      term.setTextColor(colors.black)
+
+      -- 描写
+      term.setBackgroundColor(colors.red)
+      term.setTextColor(colors.white)
+      term.setCursorPos(stopBtnX, stopBtnY)
+      term.setBackgroundColor(colors.black)
+      print(padding)
+      term.setCursorPos(stopBtnX, stopBtnY+1)
+      print(stopStr)
+      term.setCursorPos(stopBtnX, stopBtnY+2)
+      print(padding)
+    end
+
+    function drawSaveFileName(x,y)
+      term.setBackgroundColor(colors.black)
+      term.setTextColor(colors.white)
+      term.setCursorPos(saveFileWindowX, saveFileWindowY)
+      print(savePadding)
+      term.setCursorPos(saveFileWindowX, saveFileWindowY+1)
+      print(saveFileStr)
+      term.setCursorPos(saveFileWindowX, saveFileWindowY+2)
+      print(savePadding)
+      term.setCursorPos(saveFileWindowX, saveFileWindowY+3)
+      print(savePadding)
+      term.setCursorPos(saveFileWindowX, saveFileWindowY+4)
+      print(savePadding)
+      term.setCursorPos(saveFileWindowX+1, saveFileWindowY+4)
+      term.setCursorBlink(true)
+      while true do
+        if not fs.exists("data/") then
+          shell.run("mkdir data")
+        end
+        term.setCursorPos(saveFileWindowX+10, saveFileWindowY+2)
+        term.setTextColor(colors.lime)
+        term.write("input mode")
+        event, scancode, x, y = os.pullEvent()
+        term.setTextColor(colors.white)
+        term.setCursorPos(saveFileWindowX+1, saveFileWindowY+3)
+        if event == "key" then
+          local filename = read()
+          shell.run("os/painter data/"..filename)
+        elseif event == "mouse_click" and not( x > saveFileWindowX and x < saveFileWindowXEnd and y > saveFileWindowY and y < saveFileWindowY) then
+          init()
+        end
+      end
+    end
+
+    function stop()
+      clear()
+      running = false
+      term.setTextColor(colors.lime)
+      print("Thanks for using MigyOS")
+    end
+
+    function reboot()
+      term.setBackgroundColor(colors.gray)
+      term.clear()
+      term.setCursorPos(1, 1)
+      term.setTextColor(colors.yellow)
+      term.write("Restart OS")
+      term.setTextColor(colors.orange)
+      textutils.slowPrint(".....Loading")
+      sleep(1)
+      os.reboot()
+    end
+
+    function startOmikuji()
+      clear()
+      running = false
+      term.setTextColor(colors.lime)
+      print("Starting omikuji...")
+      shell.run("os/omikuji")
+    end
+
+    function startShowFace()
+      clear()
+      running = false
+      term.setBackgroundColor(colors.cyan)
+      term.clear()
+      drawStopButton(x,y)
+      shell.run("os/showplayerface")
+    end
+
+    function override(filename,url)
+      -- ファイルを削除
+      if fs.exists(filename) then
+        fs.delete(filename)
+      end
+      -- 表示
+      term.setTextColor(colors.lime)
+      print("update "..filename)
+      shell.run("pastebin", "get", url, filename)
+      -- ファイル確認
+      if fs.exists(filename) then
+        term.setTextColor(colors.white)
+        print("complete")
+      else
+        term.setTextColor(colors.red)
+        print("no file")
+      end
+    end
+
+    function updateOS()
+      term.setBackgroundColor(colors.black)
+      term.clear()
+      term.setCursorPos(1, 1)
+      -- OS
+      override("startup", "z8Y9jdcz")
+      override(_dtFile, "zKkD38eF")
+      -- omikuji
+      override("os/omikuji", "YKrBAGwd")
+      override(_omFile, "EFez6PUZ")
+      -- showfaceplayer
+      override("os/showplayerface", "v9ma03dH")
+      override(_sfFile, "G4JGRyX9")
+      -- painter
+      override("os/painter", "bM00777F")
+      -- reboot
+      os.reboot()
+    end
+
+    function runTime()
+      while running do
+        event, button, x, y = os.pullEvent("mouse_click")
+        if _ms == 0 and button == 1 and x < 9 and y == 1 then
+          -- メニューをクリックした時
+          drawMenu1()
+          _ms = 1
+        elseif _ms == 1 and button == 1 and y == 2 and x < 9 then
+          -- パワーを押したとき
+          stop()
+        elseif _ms == 1 and button == 1 and y == 3 and x < 9 then
+          -- rebootを押したとき
+          reboot()
+          init()
+        elseif _ms == 1 and button == 1 and x < 9 and y == 1 then
+          -- メニューが開いている時に、メニューを押したとき
+          init()
+        elseif _ms == 0 and button == 1 and x > 9 and x < 18 and y == 1 then
+          -- おみくじをクリックした時
+          startOmikuji()
+          shell.run("startup")
+        elseif _ms == 0 and button == 1 and x > 18 and x < 27 and y == 1 then
+          -- 顔表示をクリックした時
+          startShowFace()
+        elseif _ms == 0 and button == 1 and x > 29 and x < 35 and y == 1 then
+          -- ペインターをクリックした時
+          drawSaveFileName(saveFileWindowX, saveFileWindowY)
+        elseif _ms == 0 and button == 1 and x > 39 and x < 50 and y == 1 then
+          -- ペインターをクリックした時
+          updateOS()
+        elseif _ms == 0 and _rcm == 0 and button == 2 then
+          -- 右クリックした時
+          _rcm = 1
+          rightClickMenu(x,y)
+        elseif _ms == 0 and _rcm == 0 and _st == 1 and x > stopBtnX and x < stopBtnXEnd and y < stopBtnY and y < stopBtnYEnd then
+          -- showplayerface画面のストップ
+          shell.run("startup")     
+        end
+      end
+    end
+
+    function init()
+      _ms = 0 
+      _rcm = 0
+      _st = 0
+      drawDeskTop()
+      drawTaskBar()
+      runTime()
+      if _tabs == 1 then
+        redraw()
+      end
+      _tabs = 0
+    end
+
+    -- メイン
+    init()
