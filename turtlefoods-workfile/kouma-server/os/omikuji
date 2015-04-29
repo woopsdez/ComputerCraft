@@ -17,6 +17,8 @@
 --    凶 > drawbrigeで床が消えて下に落ちる、蜘蛛の巣&パンクステージ&ホッパーでアイテム回収、外のチェストに収納
 -- ------------------------- --
 
+-- [/////// 変    数 ///////] --
+
 -- 変数
 local running = true
 local _st = 0
@@ -31,12 +33,9 @@ local stopBtnY = (y/2)+2
 local stopBtnXEnd = stopBtnX + stopStrlen
 local stopBtnYEnd = stopBtnY + 3
 
--- 定数imageから10進数に変更
-function lookupColor(index)
-  return bit.blshift(1, index) 
-end
+-- [/////// 関    数 ///////] --
 
--- [/////// 表示画像の読み込み ///////] --
+-- 表示画像の読み込み
 function showImage(imagename)
   term.clear()
   if fs.exists(imagename) then
@@ -47,42 +46,7 @@ function showImage(imagename)
   end
 end
 
-function showTitle()
-  -- モニター側のスタート画面を表示
-  term.setBackgroundColor(colors.yellow)
-  showImage("os/omikuji-image/hyoushi")
-  term.setBackgroundColor(colors.black)
-  term.setTextColor(colors.white)
-  write("[Strat => right-click]")
-end
-
-function startOmikuji()
-  os.startTimer(0.2)
-  while true do
-    event = os.pullEvent()
-    -- 0.2秒で画像表示をくりかえす
-    if event == "timer" and _st == 0 then
-      -- 表示する画像を配列に格納
-      local fileList = fs.list("data/")
-      i = math.random(table.maxn(fileList))
-      showImage("data/"..fileList[i])
-      os.startTimer(0.4)
-    elseif event == "monitor_touch" and _st == 0 then
-       -- [/////// 吉と凶の判定 ///////] --
-      local kuji = math.random(100)
-      if kuji >= 50 then
-        showImage("os/omikuji-image/kichi")
-      else
-        showImage("os/omikuji-image/kyou")
-      end
-      term.setBackgroundColor(colors.black)
-      write("[Restrat => right-click]")
-      _st = 1
-    elseif _st == 1 then
-      return false
-    end
-  end
-end
+-- 操作用PC関連
 
 -- ストップボタンを表示
 function drawStopButton(x,y)
@@ -114,6 +78,44 @@ function reboot()
   os.reboot()
 end
 
+-- おみくじ関連
+-- モニター側のスタート画面を表示
+function showTitle()
+  term.setBackgroundColor(colors.yellow)
+  showImage("os/omikuji-image/hyoushi")
+  term.setBackgroundColor(colors.black)
+  term.setTextColor(colors.white)
+  write("[Strat => right-click]")
+end
+
+function startOmikuji()
+  os.startTimer(0.2)
+  while true do
+    event = os.pullEvent()
+    -- 0.2秒で画像表示をくりかえす
+    if event == "timer" and _st == 0 then
+      -- 表示する画像を配列に格納
+      local fileList = fs.list("data/")
+      i = math.random(table.maxn(fileList))
+      showImage("data/"..fileList[i])
+      os.startTimer(0.4)
+    elseif event == "monitor_touch" and _st == 0 then
+       -- [/////// 吉と凶の判定 ///////] --
+       local kuji = math.random(100)
+       if kuji >= 50 then
+        showImage("os/omikuji-image/kichi")
+      else
+        showImage("os/omikuji-image/kyou")
+      end
+      term.setBackgroundColor(colors.black)
+      write("[Restrat => right-click]")
+      _st = 1
+    elseif _st == 1 then
+      return false
+    end
+  end
+end
+
 function runTime()
   while running do
     event, button, x, y = os.pullEvent()
@@ -138,7 +140,9 @@ function runTime()
   end
 end
 
--- [/////// モニターへの接続、表示の切り替え ///////] --
+-- [/////// 実行部分 ///////] --
+
+-- モニターへの接続、表示の切り替え
 monitor = peripheral.wrap("right")
 monitor.clear()
 monitor.setTextScale(2)

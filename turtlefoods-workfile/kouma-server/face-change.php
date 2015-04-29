@@ -9,6 +9,7 @@ function fileSave($username,$faceImageSrc){
   $options = array(
     "http" => array(
       "method" => "GET",
+      // ユーザーエージェントを変更しないとアクセスできないため
       "header" => "User-Agent: Minecraft",
     ),
   );
@@ -25,10 +26,6 @@ function fileSave($username,$faceImageSrc){
 // CC端末から情報を受けとる
 $username = $_GET['name'];
 $faceImageSrc = $username.".png";
-
-// ----------------------------------------- //
-// 画像キャッシュ
-// ----------------------------------------- //
 
 // 下記ユーザーは最適化したものがあるのでそちらを使う
 $user_opt = array(
@@ -56,6 +53,10 @@ foreach ($user_opt as $key => $value) {
     $username = $username."-opti";
   }
 }
+
+// ----------------------------------------- //
+// 画像キャッシュ
+// ----------------------------------------- //
 
 // アクセス時点でファイルがすでにあるかどうかを判別
 if (file_exists($faceImageSrc)) {  
@@ -219,9 +220,6 @@ for ($i=0; $i < $cl_total ; $i++) {
 }
 echo '</div>';
 
-// echo '<div class="left">';
-// echo '<p>CCの色と近い色を表示</p>';
-
 // 使用しているカラーパレット1つずつ、一番近いCCの色を探す
 $cl_table = array();
 for ($i=0; $i < count($cl_total) ; $i++) {
@@ -229,23 +227,6 @@ for ($i=0; $i < count($cl_total) ; $i++) {
     
     // 近い色を探す
     $nearest_color = imagecolorclosest($im, $colors[$j]["r"], $colors[$j]["g"], $colors[$j]["b"]);
-
-    // 近い色を表示
-    // print_r($nearest_color);
-    // $ic_rgb = imagecolorsforindex ($im, $nearest_color);
-    // printf(
-    //   '<span style="color:rgb(%d,%d,%d);">■</span>
-    //    >
-    //    <span style="color:rgb(%d,%d,%d);">■ %s</span>
-    //    <br>',
-    //   $ic_rgb["red"],
-    //   $ic_rgb["green"],
-    //   $ic_rgb["blue"],
-    //   $colors[$j]["r"],
-    //   $colors[$j]["g"],
-    //   $colors[$j]["b"],
-    //   $color_name[$j]
-    // );
   }
 }
 
@@ -276,8 +257,8 @@ for ($y=0; $y < $imageH ; $y++) {
     // 左上から順番に色情報を取得する
     $icon_color = imagecolorat($im, $x, $y);
     $icon_rgb = imagecolorsforindex($im, $icon_color);
-    // $ccのパレットと比較して一番近い色を取得
 
+    // $ccのパレットと比較して一番近い色を取得
     $cc_index = imagecolorclosest($cc, $icon_rgb["red"], $icon_rgb["green"], $icon_rgb["blue"]);
     $cc_rgb = imagecolorsforindex($cc, $cc_index);
 

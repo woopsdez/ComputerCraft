@@ -8,29 +8,22 @@
 
 -- # 動作順序
 -- 1. プログラムが起動
--- 2. 一番近くに立っている人を取得 /TODO
+-- 2. 一番近くに立っている人を取得 /clear!
 -- 3. プレイヤーネーム取得 /clear!
--- 4. Minecraft skin viewerからスキン情報を取得 /clear!
--- 5. 色を16色に変換 /clear?
--- 6. 色情報をテキストに変換 /clear!
--- 7. テキストをAPIに通す /clear!
--- 8. モニターに表示させる /clear!
+-- 4. Webサーバーからプレイヤーの表示情報を取得 /clear!
+-- 5. モニターに表示させる /clear!
 
 -- # できたらいいなというもの
--- 1. GUIでおみくじと、顔表示を切り替え
--- 2. painterで自分の顔を書いて変更できる
--- 3. ユーザーごとに自動取得 or 最適化画像にするかを切り替える
+-- 1. GUIでおみくじと、顔表示を切り替え / clear!
+-- 2. painterで自分の顔を書いて変更できる / TODO
+-- 3. ユーザーごとに自動取得 or 最適化画像にするかを切り替える /clear!
 -- ------------------------- --
 
 -- [/////// 周辺機器を取得 ///////] --
 monitor = peripheral.wrap("right")
 sensor = peripheral.wrap("top")
 
--- monitor.clear()
-
 -- [/////// 関数 ///////] --
-
--- [/////// コード書くときに便利なもの ///////] --
 -- dump
 function dump(t, level)
   level = level or 0
@@ -52,8 +45,6 @@ function methods(dirStr)
     print(i .. ". " .. v)
   end
 end
-
--- [/////// 処理に必要なもの ///////] --
 
 -- [/////// 実行部分 ///////] --
 
@@ -84,7 +75,7 @@ while true do
       print("Server didn't respond.")
       break
     else
-      -- print("sonota")
+      print("sonota")
     end
   end
 
