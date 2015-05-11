@@ -10,8 +10,14 @@ $username = $_GET['name'];
 // ファイル名として格納
 $faceImageSrc = $username.".png";
 
+// 取得元の画像を表示する用の変数に格納
+$previewUrl = $username;
+
 // キャッシュ時間の設定
 $cacheTime = 120;
+
+// CC出力文字列格納用変数
+$output = "";
 
 // 工魔メンバー定義
 $user_opt = array(
@@ -167,54 +173,6 @@ foreach ($user_opt as $key => $value) {
   }
 }
 
-// 取得元の画像を表示する用の変数に格納
-$previewUrl = $username;
-
-?>
-
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8">
-  <title>Document</title>
-  <style>
-    body{background: #000; color: #FFF;}
-    .text-center{margin:0 auto; text-align: center;}
-    .left{float: left;}
-    .right{width: 75%; float:right;}
-    .hoge{
-      display: inline-block;
-      width: 10px;
-      height: 23px;
-      margin: 0 auto;
-    }
-    span{padding: 1px;}
-  </style>
-</head>
-<body>
-
-<h1 class="text-center">この画像の色を解析するよ！</h1>
-<hr>
-
-<div class="left" style="width: 20%;">
-  <img src="<?php echo $previewUrl ?>-view.png" >
-  <br>
-  <p>ゲーム内で使える色、一覧</p>
-  <?php
-    for ($i=0; $i < count($colors) ; $i++) {
-      printf(
-        '<span style="display:inline-block; margin: 3px; padding: 3px; background: rgb(%d,%d,%d); ">%d,%d,%d</span>',
-        $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"],
-        $colors[$i]["r"], $colors[$i]["g"], $colors[$i]["b"]
-      );
-    }
-  ?>
-
-</div>
-<div class="right">
-
-<?php
-$output = "";
 // ----------------------------------------- //
 //           [[[[[近似色を取得]]]]]            //
 // ----------------------------------------- //
@@ -237,40 +195,28 @@ imagedestroy($im);
 $im = imagecreatefrompng($username."-16.png");
 // 画像の色数を調べる
 $cl_total = imagecolorstotal($im);
-echo '<div style="padding: 10px; background:#efefef; color: #000;">';
-echo '<p>このアイコンで使わている色一覧</p>';
 
-// 色数のリストを取得
-$color_list = array();
-for ($i=0; $i < $cl_total ; $i++) { 
+// デバック用色数のリストを取得
+// $color_list = array();
+// for ($i=0; $i < $cl_total ; $i++) { 
   // パレットで使われている色を配列に格納する
-  $color_list[] = imagecolorsforindex($im, $i);
-  printf(
-    '<span style="color:rgb(%d,%d,%d);">■</span>',
-    $color_list[$i]["red"],
-    $color_list[$i]["green"],
-    $color_list[$i]["blue"]
-  );
-}
-echo '</div>';
+  // $color_list[] = imagecolorsforindex($im, $i);
+  // printf(
+    // '<span style="color:rgb(%d,%d,%d);">■</span>',
+    // $color_list[$i]["red"],
+    // $color_list[$i]["green"],
+    // $color_list[$i]["blue"]
+  // );
+// }
 
 // 使用しているカラーパレット1つずつ、一番近いCCの色を探す
 $cl_table = array();
 for ($i=0; $i < count($cl_total) ; $i++) {
-  for ($j=0; $j < count($colors); $j++) { 
-    
+  for ($j=0; $j < count($colors); $j++) {     
     // 近い色を探す
     $nearest_color = imagecolorclosest($im, $colors[$j]["r"], $colors[$j]["g"], $colors[$j]["b"]);
   }
 }
-
-?>
-
-<!-- </div> -->
-<div class="left" style="width: 30%;">
-<p>CC表示用に変換</p>
-
-<?php
 
 // CCパレットをもった画像を作成
 $cc = imagecreate(16, 16);
@@ -295,25 +241,11 @@ for ($y=0; $y < $imageH ; $y++) {
     // $ccのパレットと比較して一番近い色を取得
     $cc_index = imagecolorclosest($cc, $icon_rgb["red"], $icon_rgb["green"], $icon_rgb["blue"]);
     $cc_rgb = imagecolorsforindex($cc, $cc_index);
-
-    // その色で背景を描写する
-    printf('<span class="hoge" style="background-color:rgb(%d,%d,%d);">&nbsp;</span>',
-      $cc_rgb["red"],
-      $cc_rgb["green"],
-      $cc_rgb["blue"],
-      $cc_index
-    );
   }
-  // 縦のときの処理
-  echo "<br>";
 }
-?>
 
-</div>
+$cc_indexArray = array();
 
-<div>
-  <p>CC表示用テキスト</p>
-<?php
 // アイコン画像のサイズで二重ループをかける
 for ($y=0; $y < $imageH ; $y++) { 
   for ($x=0; $x < $imageW ; $x++) { 
@@ -321,23 +253,23 @@ for ($y=0; $y < $imageH ; $y++) {
     // 左上から順番に色情報を取得する
     $icon_color = imagecolorat($im, $x, $y);
     $icon_rgb = imagecolorsforindex($im, $icon_color);
-    // $ccのパレットと比較して一番近い色を取得
 
+    // $ccのパレットと比較して一番近い色を取得
     $cc_index = imagecolorclosest($cc, $icon_rgb["red"], $icon_rgb["green"], $icon_rgb["blue"]);
     $cc_rgb = imagecolorsforindex($cc, $cc_index);
 
+    array_push($cc_indexArray, $cc_index);
+
     // その色で背景を描写する
-    printf('<span class="hoge" style="background-color:rgb(%d,%d,%d);">%x</span>',
-      $cc_rgb["red"],
-      $cc_rgb["green"],
-      $cc_rgb["blue"],
-      $cc_index
-    );
+    // printf('<span class="hoge" style="background-color:rgb(%d,%d,%d);">%x</span>',
+    //   $cc_rgb["red"],
+    //   $cc_rgb["green"],
+    //   $cc_rgb["blue"],
+    //   $cc_index
+    // );
 
     $output .= sprintf("%x", $cc_index);
   }
-  // 縦のときの処理
-  echo "<br>";
   // CC上で1px足りないため、ここで継ぎ足し
   $output .= sprintf("%x", $cc_index)."\n";
 }
@@ -354,7 +286,8 @@ imagedestroy($im);
 imagedestroy($cc);
 unlink($username."-16.png");
 unlink($username."-convert.png");
+
+include "template.php";
+
 ?>
 
-</body>
-</html>
