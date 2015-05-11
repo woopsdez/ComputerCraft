@@ -1,33 +1,19 @@
 <?php
 
-// ----------------------------------------- //
-// 画像をサーバーから取得する
-// ----------------------------------------- //
-
-function fileSave($username,$faceImageSrc){
-  // 画像をサーバー上から取得して保存
-  $options = array(
-    "http" => array(
-      "method" => "GET",
-      // ユーザーエージェントを変更しないとアクセスできないため
-      "header" => "User-Agent: Minecraft",
-    ),
-  );
-  $context = stream_context_create($options);
-  $url = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=8";
-
-  // ファイルを取得
-  $file = file_get_contents($url, false, $context);
-
-  // ファイルを保存
-  file_put_contents($faceImageSrc,$file);
-}
-
 // CC端末から情報を受けとる
 $username = $_GET['name'];
+
+// ----------------------------------------- //
+// 変数定義
+// ----------------------------------------- //
+
+// ファイル名として格納
 $faceImageSrc = $username.".png";
 
-// 下記ユーザーは最適化したものがあるのでそちらを使う
+// キャッシュ時間の設定
+$cacheTime = 120;
+
+// 工魔メンバー定義
 $user_opt = array(
   "198215knock",
   "Aguillette",
@@ -45,58 +31,6 @@ $user_opt = array(
   "shigekix",
   "gengenetrix"
 );
-
-// 上記ユーザーのリストがusernameに入っているかを確認
-foreach ($user_opt as $key => $value) {
-  if ($username === $value) {
-    // もしユーザーネームが上記のものと一致したら
-    $username = $username."-opti";
-  }
-}
-
-// ----------------------------------------- //
-// 画像キャッシュ
-// ----------------------------------------- //
-
-// アクセス時点でファイルがすでにあるかどうかを判別
-if (file_exists($faceImageSrc)) {  
-  // ファイルがあったら
-  // タイムスタンプを見る
-  $ts = filemtime($faceImageSrc);
-  if (is_null($ts)){$ts = 0;}  
-  $limit = $ts + 120;
-  if ($ts <= $limit) {
-    // 一定時間すぎていなければ、
-    // そのまま既存のファイルを返す
-    $faceImageSrc;
-  } else {
-    // 過ぎていたら、ダウンロード
-    fileSave($username, $faceImageSrc);
-    // CC表示用ファイルを初期化
-    unlink($username.".txt");
-  }
-} else {
-  // ファイルがなかったら取得 
-  fileSave($username, $faceImageSrc);
-}
-
-// ----------------------------------------- //
-// 画像データをCCで正方形に見えるように調整
-// ----------------------------------------- //
-
-$previewUrl = $username;
-
-// web表示用
-$cmd_preview = sprintf("convert %s.png -sample 3600%% %s-view.png", $username,$username);
-exec($cmd_preview);
-
-// CC表示調整用
-$cmd_upscale = sprintf("convert %s.png -sample 300%%x200%% %s-convert.png", $username,$username);
-exec($cmd_upscale);
-
-// ----------------------------------------- //
-//     [[[[[色情報をテキストデータに変換]]]]]     //
-// ----------------------------------------- //
 
 // CCで使える色を配列に格納
 $colors = array(
@@ -118,6 +52,7 @@ $colors = array(
   ["r" => 25,  "g" => 25,  "b" => 25]
 );
 
+// CCの名前定義
 $color_name = array(
   "white",
   "orange",
@@ -136,6 +71,105 @@ $color_name = array(
   "red",
   "black"
 );
+
+// ----------------------------------------- //
+// 関数定義
+// ----------------------------------------- //
+
+// 画像をサーバーから取得する
+function fileSave($username,$faceImageSrc){
+  // 画像をサーバー上から取得して保存
+  $options = array(
+    "http" => array(
+      "method" => "GET",
+      // ユーザーエージェントを変更しないとアクセスできないため
+      "header" => "User-Agent: Minecraft",
+    ),
+  );
+  $context = stream_context_create($options);
+  $url = "http://minecraft-skin-viewer.com/face.php?u=".$username."&s=8";
+
+  // ファイルを取得
+  $file = file_get_contents($url, false, $context);
+
+  // ファイルを保存
+  file_put_contents($faceImageSrc,$file);
+}
+
+// キャッシュ
+// アクセス時点でファイルがすでにあるかどうかを判別
+function fileCache($filename,$cacheTime){
+  // ファイルがあるかどうか
+  if (file_exists($filename)) {
+    // タイムスタンプを見る
+    $timeStamp = filemtime($filename);
+    // nullの場合は0を代入
+    if (is_null($timeStamp)){$timeStamp = 0;}
+    // キャッシュ保持期間の設定
+    $limit = $timeStamp + $cacheTime;
+    // キャッシュ保持期間内であるかどうか
+    if ($timeStamp <= $limit) {
+      return true;
+    } else {
+      return false;
+    }
+  } else {
+    // falseを返す
+    return false;
+  }
+}
+
+// ----------------------------------------- //
+// 実行部分
+// ----------------------------------------- //
+
+// 渡されたusernameが不適切なものではないかチェック
+if(!preg_match("/^[a-zA-Z0-9_-]+$/", $username)){
+  // 不適切なものの場合処理を終了
+  print("It is inappropriate argument.");
+  exit();
+}
+
+// ----------------------------------------- //
+// 画像が期間内に生成されているものがあればそちらを使う
+// ----------------------------------------- //
+
+// スキンサーバーから取得してきた画像
+if(fileCache($faceImageSrc,$cacheTime) === false){
+  fileSave($username, $faceImageSrc);
+}
+
+// ----------------------------------------- //
+// 最適化された画像があればそちらを優先する
+// ----------------------------------------- //
+
+// 上記ユーザーのリストがusernameに入っているかを確認
+foreach ($user_opt as $key => $value) {
+  if ($username === $value) {
+    // もしメンバーだったら最適可画像を利用
+    $username = $username."-opti";
+  } else {
+    // メンバー以外はCC用に最適化した画像を作成
+
+    // 画像データをCCで正方形に見えるように調整
+    $cmdPreview = sprintf("convert %s.png -sample 3600%% %s-view.png", $username,$username);
+    $cmdUpscale = sprintf("convert %s.png -sample 300%%x200%% %s-convert.png", $username,$username);
+    
+    // ファイルキャッシュ確認
+    $viewImage = $username."-view.png";
+    $convertImage = $username."-convert.png";
+    if(fileCache($viewImage,$cacheTime) === false){
+      exec($cmdPreview);
+    }
+    if(fileCache($convertImage,$cacheTime) === false){
+      exec($cmdUpscale);
+    }
+  }
+}
+
+// 取得元の画像を表示する用の変数に格納
+$previewUrl = $username;
+
 ?>
 
 <!DOCTYPE html>
