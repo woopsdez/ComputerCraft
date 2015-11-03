@@ -1,0 +1,289 @@
+-- TODO -------------------------------
+-- アイコンの範囲を定義
+-- クリックされた範囲を調べる
+-- 範囲がアイコンのいずれか内にあれば指定した処理を行う
+---------------------------------------
+
+-- ///////////////////// 
+-- defalut settings
+-- /////////////////////
+
+-- デバッグモード
+local debug = false
+
+-- デスクトップの色・背景の設定
+local desktop = {
+	["bgColor"] = colors.blue,
+	["wallpaper"] = paintutils.loadImage("os/image/bg-os")
+}
+
+-- メニューの設定
+local menu = {
+	-- 各種色の設定
+	["txtColor"] = colors.cyan,
+	["bgColor"]  = colors.white,
+
+	-- メニューの位置を最上部 or 最下部に変更できます。
+	-- top > 1 | bottom > y
+	["vertical"] = 1,
+	["startX"] = 1,
+
+	-- メニュー項目名
+	["list"] = {
+		"SHUTDOWN",
+		"REBOOT",
+		"LUA",
+		"OS UPDATE"
+	},
+
+	-- menubar divider
+	["openChara"]  = "[",
+	["closeChara"] = "]",
+	["spaceCount"] = 1
+}
+
+-- アプリの設定
+-- TODO どこかでpaintutils.loadImage("filename")でロードする
+local apps = {
+	["drawArea"] = {
+		["paddingLR"] = 3,
+		["paddingTB"] = 4,
+	},
+	["width"]   = 12,
+	["height"]  = 7,
+	["dir"]     = "os/image/",
+	["list"]    = {
+		[1] = {
+			["name"] = "OMIKUJI",
+			["icon"] = "icon-omkj"
+		},
+		[2] = {
+			["name"] = "SHOWPLAYERFACE",
+			["icon"] = "icon-sfp"
+		},
+		[3] = {
+			["name"] = "PAINTER",
+			["icon"] = "icon-pit"
+		}
+	}
+}
+
+-- ここから触っちゃダメ
+
+-- monitor / computer 51*19
+local deviceWidth, deviceHeight = term.getSize()
+
+-- appの描写範囲を計算
+apps.drawArea["width"]   = (apps.width * table.maxn(apps.list)) + -- アイコンのサイズ×アイコン数
+                           (apps.drawArea.paddingLR * 2) -- 設定した左右の余白
+apps.drawArea["height"]  = apps.height
+apps.drawArea["space"]   = deviceWidth - apps.drawArea.width
+apps.drawArea["divider"] = math.max(0, (apps.drawArea.space / table.maxn(apps.list)))
+
+------------------------------------------
+-- [[[[[ function ]]]] --
+------------------------------------------
+function checkMonitorDir()
+	for n,v in ipairs (peripheral.getNames()) do
+	    local dir = tostring(v)
+	    local p = peripheral.getType(v)
+	    if "monitor" == p then
+	      return true, dir
+		end
+		return false, dir
+	end
+end
+
+function init()
+	term.setBackgroundColor(colors.black)
+	term.setCursorPos(1, 1)
+	term.clear()
+end
+
+function exit()
+	init()
+	term.setTextColor(colors.lime)
+	print("Thank you for use MigyOS.")
+	print(" ")
+end
+
+function reboot()
+	init()
+	term.setTextColor(colors.lime)
+	textutils.slowPrint("REBOOTING..." , 10)
+	init()
+	sleep(1)
+	os.reboot()
+end
+
+function lua()
+	init()
+	term.setTextColor(colors.lime)
+	print("OS will shutdown.")
+	print("And started Lua Command Prompt.")
+	sleep(1)
+	shell.run("lua")
+end
+
+function update()
+	init()
+	term.setTextColor(colors.lime)
+	print("OS update....")
+end
+
+function drawWallpaper(desktop)
+	term.setBackgroundColor(desktop.bgColor)
+	term.clear()
+	paintutils.drawImage(desktop.wallpaper, 1, 1)
+end
+
+function drawMenuBar(menu,deviceWidth)
+	paintutils.drawLine(menu.startX, menu.vertical, deviceWidth, menu.vertical, menu.bgColor)
+	term.setCursorPos(menu.startX, menu.vertical)
+	term.setTextColor(menu.txtColor) 
+	local menuDetail = {}
+
+	for i, v in ipairs(menu.list) do
+		local menuText = menu.openChara..v..menu.closeChara
+		local menuTextLength = string.len(menuText)
+
+		-- menuDetailに使う変数の初期化
+		local startX = 0
+		local endX = 0
+
+		-- メニューの描写とともにカーソル位置を記憶
+		if i == table.maxn(menu.list) then
+			-- Arign right last of menu item
+			startX = (deviceWidth - string.len(menuText))
+			term.setCursorPos(startX, menu.vertical)
+			write(menuText)
+			endX = term.getCursorPos()
+		else
+			startX = term.getCursorPos()
+			write(menuText)
+			endX = term.getCursorPos()
+			for i = 1, menu.spaceCount do
+				write(" ")
+			end
+		end
+
+		-- テーブルに挿入
+		menuDetail[i] = {
+			["name"]   = v,
+			["length"] = menuTextLength,
+			["startX"] = startX,
+			["endX"]   = endX,
+			["startY"] = menu.vertical,
+			["endY"]   = menu.vertical
+		}
+	end
+
+	return menuDetail
+end
+
+function drawApps(apps) -- draw Apps
+	local appDetail = {}
+
+	for i, v in ipairs(apps.list) do
+		if 1 == i then
+			startX = apps.drawArea.paddingLR
+			startY = apps.drawArea.paddingTB
+		else
+			startX = term.getCursorPos() + apps.drawArea.divider
+		end
+
+		local img = paintutils.loadImage(apps.dir..apps.list[i].icon)
+		paintutils.drawImage(img, startX, startY)
+		endX,endY = term.getCursorPos()
+
+		appDetail[i] = {
+			["name"]   = apps.list[i].name, -- appに名前のテーブルがないのでデータ型を修正
+			["width"]  = apps.width,
+			["height"] = apps.height,
+			["startX"] = startX,
+			["endX"]   = endX,
+			["startY"] = startY,
+			["endY"]   = endY
+		}
+	end
+
+	return appDetail
+end
+
+function drawDesktop(menu,desktop,apps)
+	drawWallpaper(desktop)
+	local links = {}
+	links["menu"] = drawMenuBar(menu,deviceWidth)
+	links["app"] = drawApps(apps)
+	return links
+end
+
+-- テーブルの数だけ繰り返して座標を判定
+function returnClickAreaName(x,y,table)
+	for k, v in pairs(table) do
+		for i, v in pairs(table[k]) do
+			if x >= table[k][i].startX and x <= table[k][i].endX and
+				 y >= table[k][i].startY and y <= table[k][i].endY then
+					return table[k][i].name
+			end
+		end
+	end	
+	-- 無ければ続行
+	return nil
+end
+
+-- [[[[[実行部分]]]]] --
+
+local bool, monitorDir = checkMonitorDir()
+if bool == true then
+	local monitor = peripheral.wrap(monitorDir)
+	term.redirect(monitor)
+else
+	term.setTextColor(colors.red)
+	print("Monitor is not in the next.")
+	print("boot in this device.")
+	term.setTextColor(colors.white)
+	print("continue to press any key.")
+	os.pullEvent()
+end
+
+local links = drawDesktop(menu,desktop,apps)
+
+while true do
+	local event, key, touchX, touchY = os.pullEvent()
+	if event == "mouse_click" or event == "monitor_touch" then
+		local clickAreaName = returnClickAreaName(touchX,touchY,links)
+
+		-- debug
+		if debug then
+			paintutils.drawLine(1, deviceHeight, deviceWidth, deviceHeight, colors.red)
+			term.setTextColor(colors.white)
+			term.setCursorPos(2, deviceHeight)
+			term.clearLine()
+			write(touchX.." / "..touchY.." ")
+			if nil ~= clickAreaName then
+				write(clickAreaName)
+			end
+		end
+
+		-- メニュー実行
+		if clickAreaName == "SHUTDOWN" then
+			exit()
+			return nil
+		elseif clickAreaName == "REBOOT" then
+			reboot()
+		elseif clickAreaName == "LUA" then
+			lua()
+			reboot()
+		elseif clickAreaName == "OS UPDATE" then
+			write("UPDATE")
+		elseif clickAreaName == "OMIKUJI" then
+			shell.run(program, arguments)
+		elseif clickAreaName == "SHOWPLAYERFACE" then
+			write("UPDATE")
+		elseif clickAreaName == "PAINTER" then
+			shell.run("painter", "/paint/hoge")
+		end
+		
+	end
+end
